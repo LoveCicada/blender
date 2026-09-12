@@ -50,6 +50,21 @@
       <a href="ops.html" class="is-active">挤出与 BMO</a>
       <a href="modifiers.html">修改器</a>
     </p>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Ot as MESH_OT_extrude_region
+  participant Ex as edbm_extrude_ex
+  participant Init as BMO_op_init
+  participant Exec as BMO_op_exec
+  participant Face as bmo_extrude_face_region_exec
+  participant Upd as EDBM_update
+  Ot->>Ex: exec
+  Ex->>Init: extrude_face_region
+  Ex->>Exec: run
+  Exec->>Face: topology
+  Ex->>Upd: tag plus notifier</pre>
+      <figcaption>时序：WM Operator 只填选择和收尾。真正改半边的是 BMO。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>WM Operator 是用户命令（可撤销、可快捷键）。拓扑原语需要另一张表：字符串名 + 槽位，Python 和其它编辑器也能调。editors/mesh 只负责 poll、填选择、收尾 <code>EDBM_update</code>。</p>

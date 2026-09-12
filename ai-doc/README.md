@@ -21,7 +21,7 @@
 | [plan.md](plan.md) | 分析文档计划与进度（后续追踪用） |
 | [overview.md](overview.md) | 源码阅读范围；模块地图见学习站 |
 | [checkout-status.md](checkout-status.md) | 源码拉取检查：分析用文本已齐，lib / 资产 / LFS 不必补 |
-| [site/index.html](site/index.html) | 学习站总览（本机打开）：目录 + 五套划分。阅读器：顶栏切深浅色、搜标题、点章节轨跳到本页一节 |
+| [site/index.html](site/index.html) | 学习站总览（本机打开）：目录 + 五套划分。阅读器：顶栏切深浅色、搜标题、点章节轨跳到本页一节。主线深讲页有时序 / 流程 / 结构图，需联网加载 Mermaid |
 | [site/b/index.html](site/b/index.html) | 数据：DNA / RNA / Python UI / Operator / 更新 |
 | [site/c/index.html](site/c/index.html) | 建模：Mesh / BMesh / 编辑模式 / 修改器 |
 | [site/d/index.html](site/d/index.html) | 渲染：Depsgraph / Draw / EEVEE / Cycles |

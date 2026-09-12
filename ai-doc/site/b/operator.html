@@ -56,6 +56,22 @@
       <img src="../diagrams/b-wm-loop.svg" alt="WM_main 四步循环">
       <figcaption><code>WM_main</code>（<code>windowmanager/intern/wm.cc</code>）。进循环前先 refresh，避免未求值就跑 Operator。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Main as WM_main
+  participant Ev as wm_window_events_process
+  participant Hd as wm_event_do_handlers
+  participant Inv as wm_operator_invoke
+  participant Nt as wm_event_do_notifiers
+  participant Dw as wm_draw_update
+  Main->>Main: wm_event_do_refresh_wm_and_depsgraph
+  Main->>Ev: process
+  Ev->>Hd: handlers
+  Hd->>Inv: poll then invoke or exec
+  Main->>Nt: notifiers
+  Main->>Dw: draw</pre>
+      <figcaption>时序：<code>WM_main</code> 四步。invoke 里先 poll，有 event 且有 invoke 才进 modal。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>它解决什么</h2>

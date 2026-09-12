@@ -57,6 +57,27 @@
       <img src="diagrams/layers.svg" alt="从 DNA 到 Cycles 的八层职责">
       <figcaption>八层职责。改顶点发生在 4–5 层；视口在第 7 层看到求值结果；F12 在第 8 层另开一条像素管线。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart TB
+  dnaLayer[DNA_layout]
+  rnaLayer[RNA]
+  bkeLayer[BKE]
+  bmeshLayer[BMesh]
+  cmdLayer[WM_command]
+  uiLayer[UI]
+  evalLayer[depsgraph]
+  viewLayer[viewport]
+  offLayer[F12]
+  dnaLayer --> rnaLayer --> bkeLayer
+  bkeLayer --> bmeshLayer
+  cmdLayer --> bmeshLayer
+  uiLayer --> cmdLayer
+  uiLayer --> rnaLayer
+  cmdLayer --> evalLayer
+  evalLayer --> viewLayer
+  evalLayer --> offLayer</pre>
+      <figcaption>流程：上层可调用下层。禁止从视口绕过命令层改拓扑，也禁止 F12 直接读 edit_mesh。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>数据布局</h2>

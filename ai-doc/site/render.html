@@ -67,6 +67,31 @@
       <span class="arrow">或</span>
       <a href="catalog.html#cycles">Cycles</a>
     </p>
+    <figure class="figure">
+      <pre class="mermaid">flowchart TB
+  evalDone[evaluated_scene]
+  evalDone --> vp[DAG_EVAL_VIEWPORT]
+  evalDone --> rnd[DAG_EVAL_RENDER]
+  vp --> drw[DRW_draw_view]
+  rnd --> re[RE_engine_render]
+  drw --> eevee[EEVEE_or_Workbench]
+  re --> cycles[Cycles_or_EEVEE_F12]</pre>
+      <figcaption>流程：分道点在求值之后。视口与 F12 不共享像素后端。</figcaption>
+    </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+      participant V3D as view3d_draw_view
+      participant Drw as DRW_draw_view
+      participant Eng as ED_view3d_engine_type
+      participant Ot as RENDER_OT_render
+      participant Frame as RE_RenderFrame
+      participant Re as RE_engine_render
+      V3D->>Drw: expect evaluated graph
+      Drw->>Eng: pick Workbench EEVEE or external
+      Ot->>Frame: F12
+      Frame->>Re: RE_engines_find</pre>
+      <figcaption>时序：上面是交互帧，下面是 F12。没有名为 DEG_evaluate 的入口。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>两张求值图</h2>

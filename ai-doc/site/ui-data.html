@@ -71,6 +71,24 @@
       <span class="arrow">→</span>
       <a href="catalog.html#depsgraph">depsgraph</a>
     </p>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Prop as layout.prop
+  participant ItemR as rna_uiItemR
+  participant Set as RNA_property_set
+  participant Upd as RNA_property_update
+  participant Deg as DEG_id_tag_update
+  Prop->>ItemR: bind PointerRNA
+  ItemR->>Set: user edits
+  Set->>Upd: write DNA field
+  Upd->>Deg: default tag
+  participant Key as keymap
+  participant Inv as wm_operator_invoke
+  participant Exec as editors_exec
+  Key->>Inv: poll then invoke or exec
+  Inv->>Exec: MESH_OT or OBJECT_OT</pre>
+      <figcaption>时序：链 A 写属性；链 B 跑 Operator。两条尾巴都是标脏 + 通知。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>链 A：拖属性</h2>

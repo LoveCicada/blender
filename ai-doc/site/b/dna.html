@@ -51,7 +51,19 @@
       <a href="operator.html">Operator / WM</a>
       <a href="update.html">更新与撤销</a>
     </p>
-
+    <figure class="figure">
+      <pre class="mermaid">flowchart LR
+  headers[DNA_types_h]
+  makes[makesdna]
+  dna1[DNA1_in_blend]
+  flags[DNA_struct_get_compareflags]
+  recon[DNA_struct_reconstruct]
+  headers --> makes
+  makes --> dna1
+  dna1 --> flags
+  flags --> recon</pre>
+      <figcaption>流程：构建期编表，打开文件时按成员对齐。字段没变就 memcpy。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>编辑器和渲染器都需要一份<strong>能存盘、能跨版本打开</strong>的对象。DNA 只回答「这块内存怎么排」：名字、用户计数、顶点数、属性层。它不实现挤出，也不画像素。</p>

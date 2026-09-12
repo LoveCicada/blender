@@ -403,6 +403,8 @@ h2 {
   background: var(--paper-2);
   border: 1px solid var(--line);
   border-radius: 12px;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .figure figcaption {
@@ -415,6 +417,21 @@ h2 {
 .figure img {
   display: block;
   width: 100%;
+  height: auto;
+}
+
+.figure pre.mermaid {
+  margin: 0;
+  overflow-x: auto;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.figure pre.mermaid svg {
+  max-width: 100%;
   height: auto;
 }
 

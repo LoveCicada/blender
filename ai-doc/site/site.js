@@ -10,6 +10,64 @@
     return current.getAttribute("src").replace(/site\.js$/, "");
   }
 
+  let mermaidReady = null;
+
+  function mermaidTheme() {
+    return root.getAttribute("data-theme") === "dark" ? "dark" : "default";
+  }
+
+  function stashMermaidSource() {
+    document.querySelectorAll("pre.mermaid").forEach(function (el) {
+      if (!el.dataset.mermaidSource) {
+        el.dataset.mermaidSource = el.textContent.trim();
+      }
+    });
+  }
+
+  function renderMermaid() {
+    if (!window.mermaid) {
+      return;
+    }
+    stashMermaidSource();
+    const blocks = document.querySelectorAll("pre.mermaid");
+    if (!blocks.length) {
+      return;
+    }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "strict",
+      theme: mermaidTheme(),
+    });
+    blocks.forEach(function (el) {
+      el.removeAttribute("data-processed");
+      el.textContent = el.dataset.mermaidSource;
+    });
+    window.mermaid.run({ querySelector: "pre.mermaid" });
+  }
+
+  function ensureMermaid() {
+    if (!document.querySelector("pre.mermaid")) {
+      return;
+    }
+    if (window.mermaid) {
+      renderMermaid();
+      return;
+    }
+    if (mermaidReady) {
+      return;
+    }
+    mermaidReady = true;
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js";
+    script.onload = function () {
+      renderMermaid();
+    };
+    script.onerror = function () {
+      mermaidReady = null;
+    };
+    document.head.appendChild(script);
+  }
+
   function applyTheme(theme) {
     root.setAttribute("data-theme", theme);
     localStorage.setItem(storageKey, theme);
@@ -17,6 +75,9 @@
       btn.textContent = theme === "dark" ? "浅色" : "深色";
       btn.setAttribute("aria-label", theme === "dark" ? "切换到浅色" : "切换到深色");
     });
+    if (window.mermaid) {
+      renderMermaid();
+    }
   }
 
   function initTheme() {
@@ -175,4 +236,5 @@
   initTheme();
   initChapters();
   initSearch();
+  ensureMermaid();
 })();

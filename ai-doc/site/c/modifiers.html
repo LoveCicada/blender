@@ -54,6 +54,16 @@
       <img src="../diagrams/c-modifier-eval.svg" alt="修改器求值后分 Realtime 与 Render">
       <figcaption>同一套 <code>mesh_calc_modifiers</code>。差别是 <code>eModifierMode_Realtime</code> 还是 <code>Render</code>，以及细分的视口/渲染级别。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart TB
+  calc[mesh_calc_modifiers]
+  calc --> mode{DAG_EVAL_mode}
+  mode -->|VIEWPORT| rt[eModifierMode_Realtime]
+  mode -->|RENDER| rd[eModifierMode_Render]
+  rt --> vpMesh[viewport_mesh]
+  rd --> rndMesh[render_mesh]</pre>
+      <figcaption>流程：同一套栈。视口走 Realtime，F12 走 Render，不是两套修改器实现。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>用户要非破坏地叠变形：基网格进文件，预览在视口，F12 可以用另一套级别。点「添加修改器」只往物体链表塞参数。真正变形发生在 depsgraph 求值，写的是副本。</p>

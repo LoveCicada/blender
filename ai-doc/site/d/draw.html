@@ -50,6 +50,19 @@
       <a href="eevee.html">EEVEE / Workbench</a>
       <a href="cycles.html">F12 / Cycles</a>
     </p>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Main as view3d_main_region_draw
+  participant View as view3d_draw_view
+  participant Expect as CTX_data_expect_evaluated_depsgraph
+  participant Drw as DRW_draw_view
+  participant Eng as ED_view3d_engine_type
+  Main->>View: region draw
+  View->>Expect: graph already evaluated
+  View->>Drw: draw_context.cc
+  Drw->>Eng: Workbench EEVEE or external</pre>
+      <figcaption>时序：视口假定 depsgraph 已求过。Draw Manager 不跑修改器栈。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>视口每帧要把求值后的物体变成 GPU 批次，再叠选择轮廓和编辑线。Draw Manager 假定 depsgraph 已经求过：它调度引擎，不跑修改器栈。</p>

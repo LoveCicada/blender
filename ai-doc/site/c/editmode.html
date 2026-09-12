@@ -54,6 +54,21 @@
       <img src="../diagrams/c-edit-chain.svg" alt="进出编辑模式转换">
       <figcaption>转换函数在 editors，真正拷数据在 bmesh convert。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Toggle as editmode_toggle_exec
+  participant Enter as editmode_enter_ex
+  participant Make as EDBM_mesh_make
+  participant From as BKE_mesh_to_bmesh
+  participant Eval as BM_mesh_bm_to_me_for_eval
+  participant Exit as BM_mesh_bm_to_me
+  Toggle->>Enter: Tab
+  Enter->>Make: OB_MODE_EDIT
+  Make->>From: BM_mesh_bm_from_me
+  Enter-->>Eval: modifiers may request temp arrays
+  Toggle->>Exit: leave edit</pre>
+      <figcaption>时序：进入拷到半边；<code>bm_to_me_for_eval</code> 是给修改器的临时数组，不是用户已退出。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>用户按 Tab 只觉得「能改点了」。源码必须做一次格式转换：数组变成半边，模式标志换成 <code>OB_MODE_EDIT</code>。中间的挤出、溶解只改 <code>em-&gt;bm</code>，不每步写回 DNA。</p>

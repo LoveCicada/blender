@@ -56,6 +56,20 @@
       <img src="../diagrams/b-two-chains.svg" alt="属性链与 Operator 链">
       <figcaption>同一对 API：<code>DEG_id_tag_update</code> + <code>WM_main_add_notifier(NC_GEOM | ND_DATA, id)</code>。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Edbm as EDBM_update
+  participant Deg as DEG_id_tag_update
+  participant Ntf as WM_main_add_notifier
+  participant Graph as depsgraph
+  participant Eds as editors
+  Edbm->>Deg: ID_RECALC_GEOMETRY
+  Edbm->>Ntf: NC_GEOM ND_DATA
+  Deg->>Graph: later evaluate
+  Ntf->>Eds: redraw listeners
+  Ntf--x Graph: does not evaluate</pre>
+      <figcaption>时序：tag 给求值图，notifier 给编辑器。EDBM_update 不写 DNA，也不跑修改器。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>它解决什么</h2>

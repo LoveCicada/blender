@@ -78,6 +78,7 @@ archify/       ← 邻居图，不另起目录
 - [x] 目录 / 五套划分 / 问答只换外壳，不扩 21 条、不重写 200 题
 - [x] 13 篇深讲加厚为：它解决什么 / 走读 / 对照表 / 三张结论卡
 - [x] 源码深讲：五套投影 + 数据/建模/渲染补真实函数栈（`WM_main`、`editmode_enter_ex`、`edbm_extrude_ex`、`DRW_draw_view`、`DEG_evaluate_on_refresh`）
+- [x] 主线 Mermaid 图：投影 + `b/` `c/` `d/` 嵌入时序 / 流程 / 结构图；`site.js` 按需加载 jsDelivr，跟主题；已有 SVG 总览保留
 - [x] 不改 [`archify/`](archify/README.md)
 
 ### Archify 邻居图

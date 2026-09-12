@@ -55,6 +55,56 @@
       <img src="../diagrams/b-two-chains.svg" alt="属性点击与 Operator 两条链汇合到 DEG 与 notifier">
       <figcaption>两条入口，同一条尾巴：标脏 + 通知。Operator 额外推撤销。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">classDiagram
+  class ID {
+    name
+    us
+    recalc
+  }
+  class Mesh {
+    verts_num
+    runtime
+  }
+  class MeshRuntime {
+    edit_mesh
+  }
+  class PointerRNA {
+    data
+    type
+  }
+  class PropertyRNA {
+    identifier
+    update
+  }
+  class wmOperatorType {
+    idname
+    poll
+    invoke
+    exec
+  }
+  Mesh --> ID : id
+  Mesh --> MeshRuntime : runtime
+  PointerRNA --> PropertyRNA</pre>
+      <figcaption>结构：存盘从 ID 头开始；RNA 指向同一块内存；命令类型另挂 poll / invoke / exec。</figcaption>
+    </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant ItemR as rna_uiItemR
+  participant Set as RNA_property_set
+  participant Upd as RNA_property_update
+  participant Inv as wm_operator_invoke
+  participant Exec as editors_exec
+  participant Tag as DEG_id_tag_update
+  participant Ntf as WM_main_add_notifier
+  ItemR->>Set: chain A
+  Set->>Upd: write DNA
+  Upd->>Tag: default update
+  Inv->>Exec: chain B
+  Exec->>Tag: EDBM_update
+  Tag->>Ntf: same tail</pre>
+      <figcaption>时序：属性链与 Operator 链汇合到 tag / notifier。</figcaption>
+    </figure>
     <div class="grid-5">
       <a class="card" href="dna.html">
         <div class="n">1</div>

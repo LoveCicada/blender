@@ -57,6 +57,23 @@
       <img src="diagrams/features.svg" alt="功能与 BKE、BMesh、Editors、Depsgraph、Draw、Cycles 对照表">
       <figcaption>橙底 = 这条用户功能会进入该子系统。F12 不走 Draw；纯视口预览不走 Cycles。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart TD
+  action[user_action]
+  action --> grab[G_object_mode]
+  action --> tab[Tab]
+  action --> extrude[E_edit_mode]
+  action --> f12[F12]
+  grab --> xform[editors/transform]
+  tab --> enterEx[editmode_enter_ex]
+  extrude --> edbm[edbm_extrude_ex]
+  f12 --> renderOt[RENDER_OT_render]
+  xform --> degTag[DEG_id_tag_update]
+  enterEx --> degTag
+  edbm --> degTag
+  renderOt --> reEng[RE_engine_render]</pre>
+      <figcaption>流程：同一套用户手感，源码分叉。物体模式 G 不进 BMesh；F12 不走 DRW_draw_view。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>物体模式</h2>

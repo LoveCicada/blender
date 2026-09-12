@@ -54,6 +54,32 @@
       <img src="../diagrams/d-fork.svg" alt="视口与 F12 在求值后分道">
       <figcaption>两张图、两种 modifier 模式、两套出像素的路。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart TB
+  evalDone[evaluated_scene]
+  evalDone --> vp[DAG_EVAL_VIEWPORT]
+  evalDone --> rnd[DAG_EVAL_RENDER]
+  vp --> drw[DRW_draw_view]
+  rnd --> re[RE_engine_render]</pre>
+      <figcaption>流程：求值后再分道。视口与 F12 不共享像素后端。</figcaption>
+    </figure>
+    <figure class="figure">
+      <pre class="mermaid">classDiagram
+  class DrawManager {
+    DRW_draw_view
+  }
+  class OverlayEngine {
+    outlines
+    edit_lines
+  }
+  class RenderEngineType {
+    view_draw
+    render
+  }
+  DrawManager --> OverlayEngine : not RenderEngineType
+  DrawManager --> RenderEngineType : viewport pick</pre>
+      <figcaption>结构：Draw Manager 调度一帧；overlay 不是引擎类型；F12 另走 <code>RenderEngineType</code>。</figcaption>
+    </figure>
     <div class="grid-5">
       <a class="card" href="depsgraph.html"><div class="n">1</div><h3>求值图</h3><p>COW、tag、evaluate_on_refresh。</p></a>
       <a class="card" href="draw.html"><div class="n">2</div><h3>视口</h3><p>DRW_draw_view 与 overlay。</p></a>

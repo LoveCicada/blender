@@ -54,6 +54,19 @@
       <img src="../diagrams/d-fork.svg" alt="F12 使用 DAG_EVAL_RENDER">
       <figcaption>F12 用渲染图求值（Render 修改器级别），再进引擎回调。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Ot as RENDER_OT_render
+  participant Frame as RE_RenderFrame
+  participant Init as render_init_depsgraph
+  participant Eng as RE_engine_render
+  participant Sync as BlenderSync_sync_data
+  Ot->>Frame: F12
+  Frame->>Init: DAG_EVAL_RENDER
+  Frame->>Eng: RE_engines_find
+  Eng->>Sync: intern/cycles/blender/sync.cpp</pre>
+      <figcaption>时序：F12 另建渲染图，再同步到 Cycles。不读编辑态 BMesh。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>F12 要按场景里的引擎字符串分发，再另建 <code>DAG_EVAL_RENDER</code> 图。Cycles 把求值物体同步成自己的 scene / kernel，不读编辑态 BMesh，也不复用 EEVEE 的 GPU 材质机器码。</p>

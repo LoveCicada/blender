@@ -57,6 +57,32 @@
       <img src="diagrams/neighbors.svg" alt="从 mesh 编辑器经 BMesh、Mesh、修改器到 Draw 或 Cycles">
       <figcaption>建模相关模块的邻居关系。编辑器改拓扑；修改器在求值时叠加；最后才分给视口或 Cycles。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart LR
+  editorsMesh[editors/mesh]
+  bmeshLib[bmesh]
+  bke[blenkernel]
+  drawMgr[draw]
+  cyclesEng[intern/cycles]
+  editorsMesh --> bmeshLib
+  bmeshLib --> bke
+  bke --> drawMgr
+  bke --> cyclesEng</pre>
+      <figcaption>流程：挤出后谁接手。不要从 draw 或 Cycles 里找拓扑。</figcaption>
+    </figure>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant MeshOT as MESH_OT_extrude_region
+  participant Edbm as edbm_extrude_ex
+  participant Bmo as BMO_op_exec
+  participant Update as EDBM_update
+  MeshOT->>Edbm: exec
+  Edbm->>Bmo: extrude_face_region
+  Edbm->>Update: tag plus notifier
+  Update->>Update: DEG_id_tag_update
+  Update->>Update: WM_main_add_notifier</pre>
+      <figcaption>时序：编辑模式按 E。BMO 改半边，EDBM_update 不写回 DNA。</figcaption>
+    </figure>
 
     <section class="panel">
       <h2>它解决什么</h2>

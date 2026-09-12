@@ -54,6 +54,42 @@
       <img src="../diagrams/c-edit-chain.svg" alt="从 DNA Mesh 转到 BMesh 再写回">
       <figcaption>留在编辑模式时只改 <code>bm</code> + <code>EDBM_update</code>。写回 DNA 发生在退出或 flush。</figcaption>
     </figure>
+    <figure class="figure">
+      <pre class="mermaid">classDiagram
+  class Mesh {
+    verts_num
+    runtime
+  }
+  class MeshRuntime {
+    edit_mesh
+  }
+  class BMEditMesh {
+    bm
+  }
+  class BMesh
+  class BMVert
+  class BMEdge
+  class BMFace
+  Mesh --> MeshRuntime : runtime
+  MeshRuntime --> BMEditMesh : edit_mesh
+  BMEditMesh --> BMesh : bm
+  BMesh --> BMVert
+  BMesh --> BMEdge
+  BMesh --> BMFace</pre>
+      <figcaption>结构：存盘数组在 Mesh；编辑态半边在 <code>runtime-&gt;edit_mesh-&gt;bm</code>。</figcaption>
+    </figure>
+    <figure class="figure">
+      <pre class="mermaid">flowchart LR
+  enter[editmode_enter_ex]
+  make[EDBM_mesh_make]
+  edit[change_bm]
+  upd[EDBM_update]
+  exit[editmode_exit]
+  write[BM_mesh_bm_to_me]
+  enter --> make --> edit --> upd
+  edit --> exit --> write</pre>
+      <figcaption>流程：进编辑转半边，中间只改 bm，退出才写回 DNA 数组。</figcaption>
+    </figure>
     <div class="grid-5">
       <a class="card" href="mesh-bmesh.html"><div class="n">1</div><h3>两套网格</h3><p>数组 Mesh vs 半边 BMesh。</p></a>
       <a class="card" href="editmode.html"><div class="n">2</div><h3>Tab</h3><p>OBJECT_OT_editmode_toggle。</p></a>

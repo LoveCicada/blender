@@ -50,6 +50,15 @@
       <a href="eevee.html">EEVEE / Workbench</a>
       <a href="cycles.html">F12 / Cycles</a>
     </p>
+    <figure class="figure">
+      <pre class="mermaid">sequenceDiagram
+  participant Refresh as DEG_evaluate_on_refresh
+  participant Frame as DEG_evaluate_on_framechange
+  participant Flush as deg_flush_updates_and_refresh
+  Refresh->>Flush: data changed
+  Frame->>Flush: tag_time_source then frame</pre>
+      <figcaption>时序：对外入口是 refresh / framechange。没有名为 <code>DEG_evaluate</code> 的函数。</figcaption>
+    </figure>
     <section class="panel">
       <h2>它解决什么</h2>
       <p>改一个顶点不该重算全世界。depsgraph 把「谁依赖谁」编成图：标脏一块几何，只重跑相关操作。视口和 F12 需要两张图，因为修改器级别和可见性不一样。</p>
