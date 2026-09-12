@@ -48,7 +48,7 @@
 | `make update` / `make.bat update` | 构建工作流；分析不要跑 |
 | `tests/data/` | 独立测试资源，已被官方 `.gitignore` 排除 |
 
-官方 `make update` 若将来要用，应加 `--no-libraries`。GitHub 镜像场景下 `GIT_LFS_SKIP_SMUDGE=1` 对分析是合理选择。
+官方 `make update` 若将来要用，应加 `--no-libraries`。GitHub 镜像场景下 `GIT_LFS_SKIP_SMUDGE=1` 对分析是合理选择：它只跳过 LFS smudge（`.blend` / 图 / 测试二进制），**不**跳过 `lib/` 预编译库子模块。官方文档整段流程还含 `make update`（会 `git lfs pull` 并启用 `lib/<platform>_<arch>`），分析不要跑。详见 [checkout-status.md](checkout-status.md)。
 
 ## 仓库未下载完整 vs 文档提交
 

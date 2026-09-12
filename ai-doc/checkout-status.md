@@ -29,6 +29,19 @@
 | `tests/files/` | 多为文本对照；LFS 二进制未下 | 本仓库用此路径存测试夹具（没有 `tests/data/`）。不要下测试大数据 |
 | `release/` 等 | 图标 / 字体 / ICC 等 LFS 二进制未下 | 不要补 |
 
+## 官方 GitHub 镜像步骤 vs 分析用途
+
+官方文档 [Using Git / GitHub Mirror](https://developer.blender.org/docs/handbook/contributing/using_git/#github-mirror) 的 Windows 示例是：先 `GIT_LFS_SKIP_SMUDGE=1` 再 `git clone`，然后 `make update`。这**不等于**跳过大文件。官方本意是：克隆时躲开 GitHub 上没有的 LFS，再从 projects.blender.org **补齐**可编译工作树。
+
+| 步骤 | 实际效果 | 对本学习仓 |
+|------|----------|------------|
+| `set GIT_LFS_SKIP_SMUDGE=1` 再 `git clone` | 不把 LFS 指针展开成实体（`.blend` / 图 / 测试二进制）。GitHub 镜像没有这些对象，不设会报错 | **有用**。分析只读文本，保持指针即可 |
+| `set GIT_LFS_SKIP_SMUDGE=` 再 `make update` | 加 `lfs-fallback` 远程，执行 `git lfs pull`，并启用/更新 `lib/<platform>_<arch>` 预编译库子模块 | **不要跑**。这正是把大文件拉进工作区 |
+
+`GIT_LFS_SKIP_SMUDGE` **管不到**预编译库。`lib/windows_x64` 等是 `.gitmodules` 里 `update = none` 的 Git 子模块，不是 LFS。只有不跑 `make update`（或将来明确加 `--no-libraries`）才会保持 `lib/` 空壳。
+
+当前仓已经是分析友好状态：文本源码齐，`lib/` 空，`assets/` / 测试 LFS 未 smudge。不必按官方图重克隆，更不要补跑 `make update`。`SKIP_SMUDGE` 也不能防止 `git add .` 误提交指针或空壳子模块。
+
 ## `source/blender/` 模块清单
 
 与 `source/blender/CMakeLists.txt` 的 `add_subdirectory` 对齐，磁盘上都在。
