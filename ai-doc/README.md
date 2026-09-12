@@ -18,6 +18,7 @@
 | 文件 | 内容 |
 |------|------|
 | [constraints.md](constraints.md) | 任务边界、禁止项、提交纪律（本任务的权威说明） |
+| [plan.md](plan.md) | 分析文档计划与进度（后续追踪用） |
 | [overview.md](overview.md) | 源码阅读范围；模块地图见学习站 |
 | [checkout-status.md](checkout-status.md) | 源码拉取检查：分析用文本已齐，lib / 资产 / LFS 不必补 |
 | [site/index.html](site/index.html) | 学习站总览地图（本机浏览器打开）：目录 + 五套划分 |
