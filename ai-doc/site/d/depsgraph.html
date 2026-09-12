@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Depsgraph · 渲染 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="index.html" class="is-active">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#depsgraph">depsgraph</a></p>
+      <h1>没有叫 DEG_evaluate 的入口</h1>
+      <p class="lede">对外是 <code>DEG_evaluate_on_refresh</code>（数据变了）和 <code>DEG_evaluate_on_framechange</code>（换帧）。包装在 <code>BKE_scene_graph_update_tagged</code> / <code>BKE_scene_graph_evaluated_ensure</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">渲染入口</a>
+      <a href="depsgraph.html" class="is-active">Depsgraph</a>
+      <a href="draw.html">Draw / 视口</a>
+      <a href="eevee.html">EEVEE / Workbench</a>
+      <a href="cycles.html">F12 / Cycles</a>
+    </p>
+    <section class="panel">
+      <h2>图里有什么</h2>
+      <p>ID 节点 → 组件（TRANSFORM / GEOMETRY / SHADING …）→ 操作节点，边是 <code>Relation</code>。构建：<code>DepsgraphNodeBuilder</code> + <code>DepsgraphRelationBuilder</code>。视口 <code>DEG_graph_build_from_view_layer</code>；F12 <code>DEG_graph_build_for_render_pipeline</code>。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>Copy-on-eval</h2>
+      <p>原始 Main 里的 Object/Mesh 尽量不动。求值写副本（<code>deg_eval_copy_on_write.cc</code>）。查询：<code>DEG_get_evaluated</code> / <code>DEG_get_original_id</code>。网格：<code>BKE_object_get_evaluated_mesh</code>（可经 <code>geometry_set_eval</code>，再 <code>BKE_mesh_wrapper_ensure_subdivision</code>）。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>两种模式</h2>
+      <p><code>DAG_EVAL_VIEWPORT</code>：Realtime 修改器、hide-viewport。场景里那张图由 <code>BKE_scene_ensure_depsgraph</code> 保证。<code>DAG_EVAL_RENDER</code>：Render 修改器、hide-render；F12 在 <code>render_init_depsgraph</code> 另建。这就是<a href="../c/modifiers.html">修改器</a>图里上下分叉的来源。</p>
+    </section>
+    <p class="later">内部阶段：COPY_ON_EVAL → 可见性 → 并行跑 <code>OperationNode::evaluate</code>（<code>deg_eval.cc</code>）。</p>
+  </main>
+  <footer class="wrap"><a href="draw.html">下一页：Draw</a></footer>
+</body>
+</html>

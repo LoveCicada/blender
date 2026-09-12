@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>按模块 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
+      <nav>
+        <a href="index.html">总览</a>
+        <a href="catalog.html">目录</a>
+        <a href="modules.html" class="is-active">模块</a>
+        <a href="responsibilities.html">职责</a>
+        <a href="features.html">功能</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="ui-data.html">UI–数据</a>
+        <a href="render.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">投影 1</p>
+      <h1>按源码模块</h1>
+      <p class="lede">分组对齐 <code>source/blender/CMakeLists.txt</code> 与 <code>intern/cycles</code>。点名称进<a href="catalog.html">目录</a>看职责和邻居。</p>
+    </section>
+
+    <figure class="figure">
+      <img src="diagrams/neighbors.svg" alt="从 mesh 编辑器经 BMesh、Mesh、修改器到 Draw 或 Cycles">
+      <figcaption>建模相关模块的邻居关系。编辑器改拓扑；修改器在求值时叠加；最后才分给视口或 Cycles。</figcaption>
+    </figure>
+
+    <section class="panel">
+      <h2>数据与文件</h2>
+      <ul>
+        <li><a href="catalog.html#makesdna">makesdna</a> — 结构布局</li>
+        <li><a href="catalog.html#makesrna">makesrna</a> — 属性反射</li>
+        <li><a href="catalog.html#blenkernel">blenkernel</a> — 运行时 ID / Mesh</li>
+        <li><a href="catalog.html#blenloader">blenloader</a> — <code>.blend</code> 读写</li>
+      </ul>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>网格与几何</h2>
+      <ul>
+        <li><a href="catalog.html#bmesh">bmesh</a> — 编辑态拓扑</li>
+        <li><a href="catalog.html#geometry">geometry</a> — 属性与几何求值</li>
+        <li><a href="catalog.html#modifiers">modifiers</a> — 修改器实现</li>
+      </ul>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>命令与界面</h2>
+      <ul>
+        <li><a href="catalog.html#windowmanager">windowmanager</a></li>
+        <li><a href="catalog.html#editors-mesh">editors/mesh</a>、<a href="catalog.html#editors-object">object</a>、<a href="catalog.html#editors-transform">transform</a></li>
+        <li><a href="catalog.html#editors-view3d">editors/space_view3d</a>、<a href="catalog.html#editors-render">editors/render</a></li>
+        <li><a href="catalog.html#python-ui">scripts/startup/bl_ui</a></li>
+      </ul>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>求值、绘制、渲染</h2>
+      <ul>
+        <li><a href="catalog.html#depsgraph">depsgraph</a></li>
+        <li><a href="catalog.html#draw">draw</a> → <a href="catalog.html#eevee">eevee</a> / <a href="catalog.html#workbench">workbench</a> / <a href="catalog.html#gpu">gpu</a></li>
+        <li><a href="catalog.html#render">render</a> → <a href="catalog.html#cycles">intern/cycles</a></li>
+        <li><a href="catalog.html#nodes-shader">nodes/shader</a></li>
+      </ul>
+    </section>
+    <p class="note" style="margin-top:1rem">弱写：compositor、sequencer、io、GHOST、雕刻细目录。它们在 CMake 里存在，本轮地图不建条目。</p>
+  </main>
+  <footer class="wrap">模块树会随官方 CMake 变；条目语义以目录页为准。</footer>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RNA · 数据 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>数据 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../ui-data.html">UI–数据地图</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">对应目录 <a href="../catalog.html#makesrna">makesrna</a></p>
+      <h1>RNA：给 DNA 起名</h1>
+      <p class="lede">RNA 是反射层：<code>StructRNA</code> 是类型，<code>PropertyRNA</code> 是属性，<code>PointerRNA</code> 是「指向哪块 DNA、属于哪个 ID」。UI 和 <code>bpy</code> 只认这一套名字。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">数据入口</a>
+      <a href="dna.html">DNA</a>
+      <a href="rna.html" class="is-active">RNA</a>
+      <a href="python-ui.html">Python UI</a>
+      <a href="operator.html">Operator / WM</a>
+      <a href="update.html">更新与撤销</a>
+    </p>
+
+    <section class="panel">
+      <h2>三个类型</h2>
+      <ul>
+        <li><code>PointerRNA</code>（<code>RNA_types.hh</code>）：<code>owner_id</code> + <code>type</code> + <code>data</code>。</li>
+        <li><code>StructRNA</code>：如 <code>"Mesh"</code>，继承 <code>"ID"</code>，挂一串属性。</li>
+        <li><code>PropertyRNA</code>：标识符、类型、SDNA offset 或 get/set、<code>update</code> 函数、<code>noteflag</code>。</li>
+      </ul>
+    </section>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>定义时绑到 DNA</h2>
+      <p><code>makesrna/intern/rna_mesh.cc</code> 的 <code>RNA_def_mesh</code> 由构建工具 <code>makesrna.cc</code> 的 <code>PROCESS_ITEMS</code> 跑一遍，生成访问代码。</p>
+      <pre class="src">srna = RNA_def_struct(brna, "Mesh", "ID");
+
+prop = RNA_def_property(srna, "remesh_voxel_size", PROP_FLOAT, PROP_DISTANCE);
+RNA_def_property_float_sdna(prop, nullptr, "remesh_voxel_size");
+RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+
+prop = RNA_def_property(srna, "use_auto_texspace", PROP_BOOLEAN, PROP_NONE);
+RNA_def_property_boolean_sdna(prop, nullptr, "texspace_flag", ME_TEXSPACE_FLAG_AUTO);
+RNA_def_property_update(prop, 0, "rna_Mesh_update_geom_and_params");</pre>
+      <p>定义阶段 <code>RNA_def_property_update(..., "rna_Mesh_update_...")</code> 先存字符串，生成后再补成函数指针。Object 的 <code>data</code> 用 pointer funcs，不是单纯 offset：<code>rna_object.cc</code> 里 <code>rna_Object_data_get/set</code>。</p>
+    </section>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>写完为什么要 update</h2>
+      <p>运行时 <code>rna_access.cc</code> 的 <code>RNA_property_update</code>：调用 <code>prop-&gt;update</code>，默认再 <code>DEG_id_tag_update</code>（可用 <code>PROP_NO_DEG_UPDATE</code> 关掉），并 <code>WM_msg_publish_rna</code> 刷新绑定该属性的控件。</p>
+      <pre class="src">/* rna_mesh.cc */
+rna_Mesh_update_geom_and_params(...) {
+  DEG_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PARAMETERS);
+  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+}
+
+rna_Mesh_update_draw(...) {
+  WM_main_add_notifier(NC_GEOM | ND_DATA, id);
+}</pre>
+      <p>改纹理空间这类几何相关属性走前者；很多「只影响显示」的走 <code>rna_Mesh_update_draw</code>。体素尺寸等还可带 <code>PROP_NO_DEG_UPDATE</code>，等你按 Remesh 按钮再算。</p>
+    </section>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>Python 怎么碰到 RNA</h2>
+      <p><code>source/blender/python/intern/bpy_rna.cc</code>：<code>bpy.types.Mesh</code> 是 StructRNA 的 Python 包装。赋值走 <code>RNA_property_*_set</code>，成功后 <code>pyrna_py_to_prop</code> 调 <code>RNA_property_update</code>。<code>bpy.ops.mesh.subdivide()</code> 不走属性，走 <code>bpy_operator_function.cc</code> → <code>WM_operator_call_py</code>。</p>
+    </section>
+    <p class="later">不写完整 RNA 类型表。下一页看面板如何调用 <code>layout.prop</code>。</p>
+  </main>
+  <footer class="wrap"><a href="python-ui.html">下一页：Python UI</a></footer>
+</body>
+</html>

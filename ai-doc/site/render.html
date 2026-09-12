@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>渲染 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
+      <nav>
+        <a href="index.html">总览</a>
+        <a href="catalog.html">目录</a>
+        <a href="modules.html">模块</a>
+        <a href="responsibilities.html">职责</a>
+        <a href="features.html">功能</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="ui-data.html">UI–数据</a>
+        <a href="render.html" class="is-active">渲染</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">投影 5 · 地图级</p>
+      <h1>求值之后如何分道</h1>
+      <p class="lede">视口和 F12 <strong>共享</strong>求值结果，<strong>不共享</strong>像素后端。函数级走读：<a href="d/index.html">渲染</a>。</p>
+    </section>
+
+    <figure class="figure">
+      <img src="diagrams/flow.svg" alt="Depsgraph 之后分到 Draw/EEVEE 或 Cycles">
+      <figcaption>分道点：求值完成之后。上面交互帧，下面路径追踪。</figcaption>
+    </figure>
+
+    <p class="chain">
+      <a href="catalog.html#depsgraph">求值后的场景</a>
+      <span class="arrow">→</span>
+      <a href="catalog.html#draw">Draw</a>
+      <span class="arrow">/</span>
+      <a href="catalog.html#eevee">EEVEE</a>
+      <span class="arrow">或</span>
+      <a href="catalog.html#cycles">Cycles</a>
+    </p>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h2>视口</h2>
+        <p><a href="catalog.html#editors-view3d">View3D</a> 指定着色类型。<a href="catalog.html#draw">draw</a> 拉起 Workbench 或 EEVEE，经 <a href="catalog.html#gpu">gpu</a> 出帧。选中高亮、线框是 overlay 引擎，不是 Cycles。</p>
+      </section>
+      <section class="panel">
+        <h2>F12</h2>
+        <p><a href="catalog.html#editors-render">editors/render</a> 叫 <a href="catalog.html#render">render</a>。引擎若是 Cycles，走 <code>intern/cycles</code> 的 sync → BVH → integrator → kernel。结果进图像缓冲，不是 DrawManager 的 framebuffer。</p>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>材质为什么两边都能用</h2>
+      <p>用户编辑的是同一份 <a href="catalog.html#nodes-shader">shader node tree</a>。EEVEE 把它编成 GPU shader；Cycles 编成自己的闭包/SVM。兼容是「语义尽量对齐」，不是同一份机器码。</p>
+    </section>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>和建模的关系</h2>
+      <p>渲染器看到的网格通常是 <em>求值后</em> 的：修改器已应用、实例已展开。编辑模式的 BMesh 不会直接丢进 kernel。所以改拓扑要先写回 Mesh 并标脏。</p>
+    </section>
+
+    <p class="later">深讲已写：<a href="d/index.html">渲染</a>。</p>
+  </main>
+  <footer class="wrap">Hydra / 外部引擎本轮只承认 <code>source/blender/render/hydra</code> 存在，不写。</footer>
+</body>
+</html>

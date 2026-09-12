@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>子系统目录 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
+      <nav>
+        <a href="index.html">总览</a>
+        <a href="catalog.html" class="is-active">目录</a>
+        <a href="modules.html">模块</a>
+        <a href="responsibilities.html">职责</a>
+        <a href="features.html">功能</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="ui-data.html">UI–数据</a>
+        <a href="render.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">权威正文</p>
+      <h1>子系统目录</h1>
+      <p class="lede">每条只写职责、路径、邻居。五套划分页都链回这里。源码符号保持英文；正文中文。</p>
+    </section>
+
+    <p class="toc">
+      <a href="#makesdna">makesdna</a>
+      <a href="#makesrna">makesrna</a>
+      <a href="#blenkernel">blenkernel</a>
+      <a href="#blenloader">blenloader</a>
+      <a href="#bmesh">bmesh</a>
+      <a href="#geometry">geometry</a>
+      <a href="#modifiers">modifiers</a>
+      <a href="#windowmanager">windowmanager</a>
+      <a href="#editors-mesh">editors/mesh</a>
+      <a href="#editors-object">editors/object</a>
+      <a href="#editors-transform">editors/transform</a>
+      <a href="#editors-view3d">space_view3d</a>
+      <a href="#editors-render">editors/render</a>
+      <a href="#python-ui">Python UI</a>
+      <a href="#depsgraph">depsgraph</a>
+      <a href="#draw">draw</a>
+      <a href="#gpu">gpu</a>
+      <a href="#eevee">EEVEE</a>
+      <a href="#workbench">Workbench</a>
+      <a href="#render">render</a>
+      <a href="#cycles">Cycles</a>
+      <a href="#nodes-shader">shader nodes</a>
+    </p>
+
+    <article id="makesdna" class="entry">
+      <h2>数据布局 <span class="code">makesdna</span></h2>
+      <p class="lede">定义写进 <code>.blend</code> 的 C 结构：<code>Mesh</code>、<code>Object</code>、<code>Scene</code>、<code>Material</code> 等。这是「磁盘上的真相」，不是编辑器算法。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/makesdna/</code>，例如 <code>DNA_mesh_types.h</code></dd>
+        <dt>上游</dt>
+        <dd>无（最底层布局）。构建时由 DNA 工具生成访问代码。</dd>
+        <dt>下游</dt>
+        <dd><a href="#blenkernel">blenkernel</a>、<a href="#blenloader">blenloader</a>、<a href="#makesrna">makesrna</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">数据布局</span><span class="tag tag-feat">物体 / 网格 / 材质</span></p>
+      <p class="later">深讲：<a href="b/dna.html">DNA</a>。不展开每个版本修补。</p>
+    </article>
+
+    <article id="makesrna" class="entry">
+      <h2>属性反射 <span class="code">makesrna</span></h2>
+      <p class="lede">把 DNA 字段和运行时函数暴露成属性、枚举、函数。面板、Python <code>bpy</code>、Operator 属性都经过 RNA，而不是直接扫结构体。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/makesrna/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#makesdna">makesdna</a>、<a href="#blenkernel">blenkernel</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#python-ui">Python UI</a>、<a href="#windowmanager">windowmanager</a>（Operator 属性）</dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">属性反射</span><span class="tag tag-feat">UI / Python</span></p>
+      <p class="later">深讲：<a href="b/rna.html">RNA</a>。</p>
+    </article>
+
+    <article id="blenkernel" class="entry">
+      <h2>运行时对象 <span class="code">blenkernel</span></h2>
+      <p class="lede">ID 数据块的创建、拷贝、释放、命名、用户计数，以及 Mesh/Object/Scene 的核心逻辑（<code>BKE_*</code>）。编辑器和修改器改数据，最后多半落到这里。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/blenkernel/</code>，例如 <code>BKE_mesh.hh</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#makesdna">makesdna</a>、<a href="#windowmanager">Operator</a>、<a href="#bmesh">bmesh</a>（写回时）</dd>
+        <dt>下游</dt>
+        <dd><a href="#depsgraph">depsgraph</a>、<a href="#blenloader">blenloader</a>、<a href="#modifiers">modifiers</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">运行时对象</span><span class="tag tag-feat">物体 / 网格 / 修改器</span></p>
+      <p class="later">深讲：<a href="c/mesh-bmesh.html">MeshRuntime / BMesh</a>。</p>
+    </article>
+
+    <article id="blenloader" class="entry">
+      <h2>文件读写 <span class="code">blenloader</span></h2>
+      <p class="lede">把 DNA 结构读写为 <code>.blend</code>。分析建模/渲染时只要知道：打开文件 = 重建 ID 图，不是「加载一棵游戏场景树」。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/blenloader/</code>、<code>blenloader_core/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#makesdna">makesdna</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#blenkernel">blenkernel</a>（得到 <code>Main</code> 数据库）</dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">数据布局</span></p>
+      <p class="later">后续不展开：版本修补、撤销步的 memfile 细节。</p>
+    </article>
+
+    <article id="bmesh" class="entry">
+      <h2>编辑态拓扑 <span class="code">bmesh</span></h2>
+      <p class="lede">编辑模式使用的半边式网格：顶点/边/环/面互相指。适合挤出、切割、溶解。退出编辑或求值需要时，再转成 <code>Mesh</code> 的连续数组。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/bmesh/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#editors-mesh">editors/mesh</a>、<a href="#editors-transform">transform</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#blenkernel">Mesh / BKE</a> → <a href="#depsgraph">depsgraph</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">拓扑编辑</span><span class="tag tag-feat">编辑模式</span></p>
+      <p class="later">深讲：<a href="c/mesh-bmesh.html">BMesh</a> · <a href="c/ops.html">挤出 / BMO</a>。</p>
+    </article>
+
+    <article id="geometry" class="entry">
+      <h2>几何与属性 <span class="code">geometry</span></h2>
+      <p class="lede">几何节点和通用属性（域、类型、字段）的求值底座。修改器和节点把「网格当数据」处理时走这里，而不是 BMesh 的编辑算子。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/geometry/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#blenkernel">blenkernel</a>、几何节点（本轮弱写）</dd>
+        <dt>下游</dt>
+        <dd><a href="#modifiers">modifiers</a>、<a href="#depsgraph">depsgraph</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">运行时对象</span><span class="tag tag-feat">修改器</span></p>
+      <p class="later">后续：C 里若碰到几何节点修改器再展开。不写节点语言全集。</p>
+    </article>
+
+    <article id="modifiers" class="entry">
+      <h2>修改器 <span class="code">modifiers</span></h2>
+      <p class="lede">非破坏叠加：细分、镜像、实体化、几何节点修改器等。参数存在 DNA 里；真正变形多在 Depsgraph 求值对象时发生，视口和渲染看到的是求值后的网格。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/modifiers/</code>；面板在 <code>scripts/startup/bl_ui/properties_data_modifier.py</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#blenkernel">Object / Mesh</a>、<a href="#editors-object">editors/object</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#depsgraph">depsgraph</a> → <a href="#draw">draw</a> / <a href="#cycles">Cycles</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">依赖求值</span><span class="tag tag-feat">修改器</span></p>
+      <p class="later">深讲：<a href="c/modifiers.html">修改器</a>。</p>
+    </article>
+
+    <article id="windowmanager" class="entry">
+      <h2>窗口与命令 <span class="code">windowmanager</span></h2>
+      <p class="lede">事件循环、窗口、keymap、<code>wmOperator</code> 注册与调用、notifier、文件操作。用户「做了一件事」的统一入口是 Operator，不是某个编辑器函数被 UI 直接调用。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/windowmanager/</code>，<code>WM_api.hh</code>、<code>WM_operator_*</code></dd>
+        <dt>上游</dt>
+        <dd>GHOST（本轮弱写）、<a href="#makesrna">RNA</a>、<a href="#python-ui">Python UI</a></dd>
+        <dt>下游</dt>
+        <dd>各 <a href="#editors-mesh">editors</a> 的 exec/invoke</dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">命令</span><span class="tag tag-feat">全部交互</span></p>
+      <p class="later">深讲：<a href="b/operator.html">Operator</a> · <a href="b/update.html">更新</a>。</p>
+    </article>
+
+    <article id="editors-mesh" class="entry">
+      <h2>网格编辑器 <span class="code">editors/mesh</span></h2>
+      <p class="lede">编辑模式下的网格 Operator：挤出、切割、合并、法线、选择。它们操作 BMesh，再通过 BKE 写回。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/editors/mesh/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#windowmanager">WM</a>、<a href="#editors-view3d">View3D</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#bmesh">bmesh</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">命令</span><span class="tag tag-feat">编辑模式</span></p>
+      <p class="later">深讲：<a href="c/ops.html">挤出 / 溶解</a>。细分见 <a href="b/operator.html">Operator</a>。</p>
+    </article>
+
+    <article id="editors-object" class="entry">
+      <h2>物体编辑器 <span class="code">editors/object</span></h2>
+      <p class="lede">物体模式：添加物体、父子、集合、应用变换、进出编辑模式。改的是 Object/ID 关系，不是 BMesh 拓扑。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/editors/object/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#windowmanager">WM</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#blenkernel">blenkernel</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">命令</span><span class="tag tag-feat">物体模式</span></p>
+      <p class="later">深讲：<a href="c/editmode.html">进出编辑模式</a>。</p>
+    </article>
+
+    <article id="editors-transform" class="entry">
+      <h2>变换 <span class="code">editors/transform</span></h2>
+      <p class="lede">G/R/S 这一套：物体、编辑点、UV 等共用变换内核，按模式写回不同数据。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/editors/transform/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#windowmanager">WM</a>（多为 modal）</dd>
+        <dt>下游</dt>
+        <dd><a href="#blenkernel">Object</a> 或 <a href="#bmesh">BMesh</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">命令</span><span class="tag tag-feat">物体 / 编辑模式</span></p>
+      <p class="later">挤出后的 G/R/S 仍是 transform modal。细节点到 <a href="c/ops.html">挤出</a>。</p>
+    </article>
+
+    <article id="editors-view3d" class="entry">
+      <h2>3D 视口空间 <span class="code">editors/space_view3d</span></h2>
+      <p class="lede">View3D 编辑器空间：相机导航、着色模式切换、叠层、选中。它不实现 EEVEE，只决定「这块区域要画什么、用哪套引擎」。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/editors/space_view3d/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#windowmanager">WM</a> / Screen</dd>
+        <dt>下游</dt>
+        <dd><a href="#draw">draw</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">UI</span><span class="tag tag-feat">视口显示</span></p>
+      <p class="later">深讲：<a href="d/draw.html">Draw / overlay</a>。</p>
+    </article>
+
+    <article id="editors-render" class="entry">
+      <h2>渲染操作 <span class="code">editors/render</span></h2>
+      <p class="lede">F12、视口渲染、渲染槽、图像编辑器里看结果。调度 <a href="#render">render</a> 模块，自己不算光。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/editors/render/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#python-ui">Render 属性面板</a>、<a href="#windowmanager">WM</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#render">render</a> → <a href="#cycles">Cycles</a> 或 <a href="#eevee">EEVEE</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">命令</span><span class="tag tag-feat">F12</span></p>
+      <p class="later">深讲：<a href="d/cycles.html">RENDER_OT_render</a>。</p>
+    </article>
+
+    <article id="python-ui" class="entry">
+      <h2>Python 界面 <span class="code">scripts/startup</span></h2>
+      <p class="lede"><code>bl_ui</code> 画出大多数面板和菜单；注册的是 RNA 属性和 Operator 名。点按钮 = 调 WM Operator，不是在 Python 里改顶点数组。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>scripts/startup/bl_ui/</code>，如 <code>space_view3d.py</code>、<code>properties_data_mesh.py</code>、<code>properties_render.py</code>、<code>properties_material.py</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#makesrna">makesrna</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#windowmanager">WM Operator</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">UI</span><span class="tag tag-feat">全部交互</span></p>
+      <p class="later">深讲：<a href="b/python-ui.html">Python UI</a>。</p>
+    </article>
+
+    <article id="depsgraph" class="entry">
+      <h2>依赖图 <span class="code">depsgraph</span></h2>
+      <p class="lede">根据「谁依赖谁」求出给绘制/渲染看的世界：应用修改器、约束、实例、动画。原数据尽量不动；求值结果是副本或缓存。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/depsgraph/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#blenkernel">BKE</a> 的 ID 图、notifier</dd>
+        <dt>下游</dt>
+        <dd><a href="#draw">draw</a>、<a href="#cycles">Cycles</a>、<a href="#render">render</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">依赖求值</span><span class="tag tag-feat">修改器 / 视口 / F12</span></p>
+      <p class="later">深讲：<a href="d/depsgraph.html">Depsgraph</a> · 修改器模式见 <a href="c/modifiers.html">修改器</a>。</p>
+    </article>
+
+    <article id="draw" class="entry">
+      <h2>视口绘制框架 <span class="code">draw</span></h2>
+      <p class="lede">把求值后的对象抽成绘制调用：引擎（EEVEE / Workbench / Overlay / Select）共用的 manager、pass、资源。这是视口像素的调度层。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/draw/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#depsgraph">depsgraph</a>、<a href="#editors-view3d">View3D</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#gpu">gpu</a>、<a href="#eevee">EEVEE</a>、<a href="#workbench">Workbench</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">视口绘制</span><span class="tag tag-feat">视口显示</span></p>
+      <p class="later">深讲：<a href="d/draw.html">Draw</a>。</p>
+    </article>
+
+    <article id="gpu" class="entry">
+      <h2>GPU 抽象 <span class="code">gpu</span></h2>
+      <p class="lede">缓冲、着色器、帧缓冲的后端无关封装（Vulkan / OpenGL 等）。Draw 和部分编辑器叠层用它，Cycles 内核一般不走这条。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/gpu/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#draw">draw</a></dd>
+        <dt>下游</dt>
+        <dd>驱动 / 平台（本轮不写）</dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">视口绘制</span></p>
+      <p class="later">EEVEE 编译见 <a href="d/eevee.html">EEVEE</a>。不写 GPU 后端对照表。</p>
+    </article>
+
+    <article id="eevee" class="entry">
+      <h2>实时引擎 <span class="code">EEVEE</span></h2>
+      <p class="lede">视口和「EEVEE 渲染」用的光栅化引擎，活在 <code>draw/engines/eevee</code>。吃着色节点编译出的 GPU shader，不是 Cycles 的 kernel。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/draw/engines/eevee/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#draw">draw</a>、<a href="#nodes-shader">shader nodes</a>、<a href="#depsgraph">depsgraph</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#gpu">gpu</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">视口绘制</span><span class="tag tag-feat">视口 / 材质</span></p>
+      <p class="later">深讲：<a href="d/eevee.html">EEVEE</a>。光照/探针不展开。</p>
+    </article>
+
+    <article id="workbench" class="entry">
+      <h2>实体/线框预览 <span class="code">Workbench</span></h2>
+      <p class="lede">Solid / 线框等快速预览引擎，不追求物理正确。建模时最常看到的「不发光的灰模」多半是它。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/draw/engines/workbench/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#draw">draw</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#gpu">gpu</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">视口绘制</span><span class="tag tag-feat">视口显示</span></p>
+      <p class="later">深讲：<a href="d/eevee.html">Workbench</a>。</p>
+    </article>
+
+    <article id="render" class="entry">
+      <h2>渲染调度 <span class="code">render</span></h2>
+      <p class="lede">渲染结果、图层、引擎注册与作业。它选择调用 Cycles 还是 EEVEE，自己不做路径追踪。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/render/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#editors-render">editors/render</a>、<a href="#depsgraph">depsgraph</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#cycles">Cycles</a> 或 <a href="#eevee">EEVEE</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">离线渲染</span><span class="tag tag-feat">F12</span></p>
+      <p class="later">深讲：<a href="d/cycles.html">Cycles</a>。Hydra 只点名。</p>
+    </article>
+
+    <article id="cycles" class="entry">
+      <h2>路径追踪 <span class="code">intern/cycles</span></h2>
+      <p class="lede">独立渲染器：同步 Blender 场景、构建 BVH、integrator、device kernel。F12 出图的主路径。与视口 Draw 分道，只共享求值后的场景语义。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>intern/cycles/</code>（<code>blender/</code> 同步、<code>scene/</code>、<code>integrator/</code>、<code>kernel/</code>、<code>device/</code>）</dd>
+        <dt>上游</dt>
+        <dd><a href="#render">render</a>、<a href="#depsgraph">depsgraph</a>、<a href="#nodes-shader">shader nodes</a></dd>
+        <dt>下游</dt>
+        <dd>CPU / GPU device（预编译库，分析不拉）</dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">离线渲染</span><span class="tag tag-feat">F12 / 材质</span></p>
+      <p class="later">深讲：<a href="d/cycles.html">Cycles sync / kernel</a>。</p>
+    </article>
+
+    <article id="nodes-shader" class="entry">
+      <h2>着色节点 <span class="code">nodes/shader</span></h2>
+      <p class="lede">材质节点树的定义与执行接口。同一套节点语义供给 EEVEE（编 GPU shader）和 Cycles（编 SVM/OSL/kernel 闭包）。</p>
+      <dl>
+        <dt>路径</dt>
+        <dd><code>source/blender/nodes/shader/</code>；编辑器空间 <code>editors/space_node/</code></dd>
+        <dt>上游</dt>
+        <dd><a href="#makesdna">NodeTree DNA</a>、<a href="#python-ui">节点菜单</a></dd>
+        <dt>下游</dt>
+        <dd><a href="#eevee">EEVEE</a>、<a href="#cycles">Cycles</a></dd>
+      </dl>
+      <p class="tags"><span class="tag tag-mod">模块</span><span class="tag tag-resp">属性 / 着色</span><span class="tag tag-feat">材质与着色</span></p>
+      <p class="later">深讲：<a href="d/eevee.html">EEVEE</a> 与 <a href="d/cycles.html">Cycles</a> 的编译分叉。几何节点见 <a href="c/modifiers.html">修改器</a>。</p>
+    </article>
+  </main>
+
+  <footer class="wrap">目录是权威。投影页若与这里冲突，以本页为准。</footer>
+</body>
+</html>

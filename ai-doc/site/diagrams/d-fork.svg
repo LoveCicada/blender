@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 240" role="img">
+  <title>Viewport vs F12 after depsgraph</title>
+  <rect x="360" y="20" width="260" height="50" rx="6" fill="#dceceb" stroke="#1c1917"/>
+  <text x="490" y="50" text-anchor="middle" font-size="14" font-weight="700">evaluated scene</text>
+  <path d="M490 70 V100" stroke="#c45c26" stroke-width="2"/>
+  <path d="M200 100 H780" stroke="#c45c26" stroke-width="2"/>
+  <path d="M200 100 V120" stroke="#c45c26" stroke-width="2"/>
+  <path d="M780 100 V120" stroke="#c45c26" stroke-width="2"/>
+  <rect x="40" y="120" width="320" height="90" rx="6" fill="#d7e6d7" stroke="#1c1917"/>
+  <text x="200" y="150" text-anchor="middle" font-size="14" font-weight="700">DAG_EVAL_VIEWPORT</text>
+  <text x="200" y="172" text-anchor="middle" font-size="12" fill="#44403c">DRW_draw_view</text>
+  <text x="200" y="192" text-anchor="middle" font-size="12" fill="#44403c">EEVEE / Workbench / overlay</text>
+  <rect x="620" y="120" width="320" height="90" rx="6" fill="#e4d7ee" stroke="#1c1917"/>
+  <text x="780" y="150" text-anchor="middle" font-size="14" font-weight="700">DAG_EVAL_RENDER</text>
+  <text x="780" y="172" text-anchor="middle" font-size="12" fill="#44403c">RENDER_OT_render</text>
+  <text x="780" y="192" text-anchor="middle" font-size="12" fill="#44403c">RE_engine_render</text>
+</svg>

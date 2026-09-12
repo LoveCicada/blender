@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>建模 · 3D 模型编辑 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="index.html" class="is-active">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">建模 · 接着数据章的 Operator</p>
+      <h1>编辑模式改的是 BMesh</h1>
+      <p class="lede">磁盘上的网格是 DNA <code>Mesh</code>。进编辑模式后，真相变成 <code>MeshRuntime.edit_mesh</code> 里的 <code>BMesh</code>。修改器不在点按钮时算完，而在 depsgraph 求值时叠到<strong>求值副本</strong>上。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html" class="is-active">建模入口</a>
+      <a href="mesh-bmesh.html">Mesh / BMesh</a>
+      <a href="editmode.html">进出编辑模式</a>
+      <a href="ops.html">挤出与 BMO</a>
+      <a href="modifiers.html">修改器</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/c-edit-chain.svg" alt="从 DNA Mesh 转到 BMesh 再写回">
+      <figcaption>留在编辑模式时只改 <code>bm</code> + <code>EDBM_update</code>。写回 DNA 发生在退出或 flush。</figcaption>
+    </figure>
+    <div class="grid-5">
+      <a class="card" href="mesh-bmesh.html"><div class="n">1</div><h3>两套网格</h3><p>数组 Mesh vs 半边 BMesh。</p></a>
+      <a class="card" href="editmode.html"><div class="n">2</div><h3>Tab</h3><p>OBJECT_OT_editmode_toggle。</p></a>
+      <a class="card" href="ops.html"><div class="n">3</div><h3>BMO</h3><p>挤出 / 溶解走运算符表。</p></a>
+      <a class="card" href="modifiers.html"><div class="n">4</div><h3>修改器</h3><p>Realtime 视口，Render 出图。</p></a>
+    </div>
+    <section class="panel">
+      <h2>读完应能说出</h2>
+      <ul>
+        <li>为什么挤出时 DNA <code>verts_num</code> 可以暂时是旧的。</li>
+        <li>视口里带着细分预览，不等于已经 Apply。</li>
+        <li>几何节点是一种修改器，不代替编辑模式。</li>
+      </ul>
+    </section>
+  </main>
+  <footer class="wrap">目录条目仍是权威。BMesh 算法细节点到挤出即可。</footer>
+</body>
+</html>

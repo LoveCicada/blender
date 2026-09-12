@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>数据 · UI 与数据层 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>数据 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../ui-data.html">UI–数据地图</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">数据</p>
+      <h1>UI 怎样改到同一份数据</h1>
+      <p class="lede">面板、快捷键、Python 都不是第二份场景拷贝。磁盘布局是 DNA，对外名字是 RNA，一次用户动作是 Operator，改完用 notifier + depsgraph 标脏。本轮把这条链读到函数名。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html" class="is-active">数据入口</a>
+      <a href="dna.html">DNA</a>
+      <a href="rna.html">RNA</a>
+      <a href="python-ui.html">Python UI</a>
+      <a href="operator.html">Operator / WM</a>
+      <a href="update.html">更新与撤销</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/b-two-chains.svg" alt="属性点击与 Operator 两条链汇合到 DEG 与 notifier">
+      <figcaption>两条入口，同一条尾巴：标脏 + 通知。Operator 额外推撤销。</figcaption>
+    </figure>
+    <div class="grid-5">
+      <a class="card" href="dna.html">
+        <div class="n">1</div>
+        <h3>DNA</h3>
+        <p>写进 .blend 的 C 结构。Mesh 从 ID 开头。</p>
+      </a>
+      <a class="card" href="rna.html">
+        <div class="n">2</div>
+        <h3>RNA</h3>
+        <p>给字段起名，绑 offset，挂 update。</p>
+      </a>
+      <a class="card" href="python-ui.html">
+        <div class="n">3</div>
+        <h3>Python UI</h3>
+        <p>layout.prop / operator 只是 RNA 客户。</p>
+      </a>
+      <a class="card" href="operator.html">
+        <div class="n">4</div>
+        <h3>WM / Operator</h3>
+        <p>WM_main 循环：事件、命令、通知、绘制。</p>
+      </a>
+      <a class="card" href="update.html">
+        <div class="n">5</div>
+        <h3>更新</h3>
+        <p>两条链的精确尾巴，以及 undo。</p>
+      </a>
+    </div>
+    <section class="panel">
+      <h2>读完应能说出</h2>
+      <ul>
+        <li><code>context.mesh.remesh_voxel_size = 0.1</code> 为什么会写到 <code>Mesh</code> 结构体，而不是 Python 自己的字典。</li>
+        <li>为什么 <code>bl_ui</code> 里几乎看不到改顶点的代码。</li>
+        <li><code>MESH_OT_subdivide</code> 结束后谁调用 <code>DEG_id_tag_update</code> 和 <code>WM_main_add_notifier</code>。</li>
+      </ul>
+    </section>
+    <p class="note" style="margin-top:1rem">本轮停在「数据变了、图脏了」。网格与修改器见 <a href="../c/index.html">建模</a>，像素见 <a href="../d/index.html">渲染</a>。</p>
+  </main>
+  <footer class="wrap">对照 5.03 alpha。权威目录仍是 <a href="../catalog.html">catalog.html</a>。</footer>
+</body>
+</html>

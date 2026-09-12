@@ -18,8 +18,12 @@
 | 文件 | 内容 |
 |------|------|
 | [constraints.md](constraints.md) | 任务边界、禁止项、提交纪律（本任务的权威说明） |
-| [overview.md](overview.md) | 源码阅读范围与模块地图（后续补充，当前只列范围） |
+| [overview.md](overview.md) | 源码阅读范围；模块地图见学习站 |
 | [checkout-status.md](checkout-status.md) | 源码拉取检查：分析用文本已齐，lib / 资产 / LFS 不必补 |
+| [site/index.html](site/index.html) | 学习站总览地图（本机浏览器打开）：目录 + 五套划分 |
+| [site/b/index.html](site/b/index.html) | 数据：DNA / RNA / Python UI / Operator / 更新 |
+| [site/c/index.html](site/c/index.html) | 建模：Mesh / BMesh / 编辑模式 / 修改器 |
+| [site/d/index.html](site/d/index.html) | 渲染：Depsgraph / Draw / EEVEE / Cycles |
 
 ## 本 fork 的用途
 

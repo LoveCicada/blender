@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>渲染 · 求值与像素 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="index.html" class="is-active">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">渲染 · 接着建模章的求值网格</p>
+      <h1>求值之后才分道</h1>
+      <p class="lede">视口用 <code>DAG_EVAL_VIEWPORT</code> + Draw Manager。F12 另建 <code>DAG_EVAL_RENDER</code>，按 <code>scene.r.engine</code> 调 <code>RE_engine_render</code>。两边都吃求值后的物体，不共享像素后端。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html" class="is-active">渲染入口</a>
+      <a href="depsgraph.html">Depsgraph</a>
+      <a href="draw.html">Draw / 视口</a>
+      <a href="eevee.html">EEVEE / Workbench</a>
+      <a href="cycles.html">F12 / Cycles</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/d-fork.svg" alt="视口与 F12 在求值后分道">
+      <figcaption>两张图、两种 modifier 模式、两套出像素的路。</figcaption>
+    </figure>
+    <div class="grid-5">
+      <a class="card" href="depsgraph.html"><div class="n">1</div><h3>求值图</h3><p>COW、tag、evaluate_on_refresh。</p></a>
+      <a class="card" href="draw.html"><div class="n">2</div><h3>视口</h3><p>DRW_draw_view 与 overlay。</p></a>
+      <a class="card" href="eevee.html"><div class="n">3</div><h3>实时</h3><p>GPU 材质 vs Workbench。</p></a>
+      <a class="card" href="cycles.html"><div class="n">4</div><h3>离线</h3><p>RENDER_OT_render 与 sync。</p></a>
+    </div>
+  </main>
+  <footer class="wrap">合成 / Hydra 点到为止。着色节点一套语义、两套编译。</footer>
+</body>
+</html>

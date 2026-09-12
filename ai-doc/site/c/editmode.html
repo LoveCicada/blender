@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>编辑模式 · 建模 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="index.html" class="is-active">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#editors-object">editors/object</a></p>
+      <h1>Tab 做了一次格式转换</h1>
+      <p class="lede">idname <code>OBJECT_OT_editmode_toggle</code>（<code>editors/object/object_edit.cc</code>）。进模式：数组 → 半边。出模式：半边 → 数组。中间的工具不写 DNA。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">建模入口</a>
+      <a href="mesh-bmesh.html">Mesh / BMesh</a>
+      <a href="editmode.html" class="is-active">进出编辑模式</a>
+      <a href="ops.html">挤出与 BMO</a>
+      <a href="modifiers.html">修改器</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/c-edit-chain.svg" alt="进出编辑模式转换">
+      <figcaption>转换函数在 editors，真正拷数据在 bmesh convert。</figcaption>
+    </figure>
+    <section class="panel">
+      <h2>进入</h2>
+      <pre class="src">editmode_toggle_exec
+  editmode_enter_ex
+    ob->mode = OB_MODE_EDIT
+    EDBM_mesh_make(ob, selectmode, ...)     /* editmesh_utils.cc */
+      BKE_mesh_to_bmesh / BM_mesh_bm_from_me
+      mesh->runtime->edit_mesh = make_shared&lt;BMEditMesh&gt;()
+      BKE_editmesh_looptris_and_normals_calc
+    DEG_id_tag_update(&amp;ob->id, ID_RECALC_GEOMETRY)</pre>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>离开</h2>
+      <pre class="src">editmode_exit_ex -> editmode_load_free_ex
+  EDBM_mesh_load_ex(bmain, obedit, free_data)
+    BM_mesh_bm_to_me(bmain, bm, mesh, &amp;params)
+  EDBM_mesh_free_data / BKE_editmesh_free_data
+  edit_mesh.reset()</pre>
+      <p>求值过程中还有 <code>BM_mesh_bm_to_me_for_eval</code>，给修改器一条临时数组，不代表用户已退出编辑。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>留在编辑模式</h2>
+      <p>工具改 <code>em-&gt;bm</code>，然后 <code>EDBM_update</code>（<a href="../b/update.html">更新</a>已写）：标 <code>ID_RECALC_GEOMETRY</code> + 重算法线/looptris。<code>needs_flush_to_id</code> 表示 DNA 过期。</p>
+    </section>
+  </main>
+  <footer class="wrap"><a href="ops.html">下一页：挤出与 BMO</a></footer>
+</body>
+</html>

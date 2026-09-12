@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Draw · 渲染 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="index.html" class="is-active">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#draw">draw</a> / <a href="../catalog.html#editors-view3d">View3D</a></p>
+      <h1>视口先假定图已经求过</h1>
+      <p class="lede"><code>view3d_main_region_draw</code> → <code>DRW_draw_view</code>（<code>draw/intern/draw_context.cc</code>）。这里 <code>CTX_data_expect_evaluated_depsgraph</code>：WM 循环里该求的已经求完。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">渲染入口</a>
+      <a href="depsgraph.html">Depsgraph</a>
+      <a href="draw.html" class="is-active">Draw / 视口</a>
+      <a href="eevee.html">EEVEE / Workbench</a>
+      <a href="cycles.html">F12 / Cycles</a>
+    </p>
+    <section class="panel">
+      <h2>一帧</h2>
+      <pre class="src">DRW_draw_view
+  ED_view3d_engine_type(scene, v3d->shading.type)
+  enable_engines
+  engines_init_and_sync     /* foreach DEG_OBJECT_ITER */
+  engines_draw_scene</pre>
+      <p>引擎接口 <code>DrawEngine</code>（<code>DRW_render.hh</code>）：<code>init / begin_sync / object_sync / end_sync / draw</code>。物体网格批：<code>BKE_object_get_evaluated_mesh*</code> + <code>draw_cache_impl_mesh.cc</code>。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>谁上、谁叠</h2>
+      <ul>
+        <li>线框 / Solid → Workbench</li>
+        <li>Material + 多数引擎 → EEVEE（Cycles 也设了 <code>RE_USE_EEVEE_VIEWPORT</code>）</li>
+        <li>Rendered + Cycles → <code>draw::external::Engine</code> 的 <code>view_draw</code></li>
+        <li>然后几乎总开 overlay：选择轮廓、编辑线、网格、gizmo</li>
+      </ul>
+      <p>Overlay <strong>不是</strong> <code>RenderEngineType</code>，活在 <code>DRWViewData</code>。F12 用的 EEVEE/Workbench 类型在 <code>DRW_engines_register</code> 里 <code>RE_engines_register</code>。</p>
+    </section>
+    <p class="later">着色模式切换只改 View3D 要启用哪组引擎，不改 DNA Mesh。</p>
+  </main>
+  <footer class="wrap"><a href="eevee.html">下一页：EEVEE</a></footer>
+</body>
+</html>

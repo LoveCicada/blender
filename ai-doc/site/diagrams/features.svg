@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 340" role="img">
+  <title>Features versus modules</title>
+  <rect x="20" y="20" width="180" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="110" y="50" text-anchor="middle" font-size="13" font-weight="700">Feature \ Module</text>
+  <rect x="200" y="20" width="125" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="262" y="50" text-anchor="middle" font-size="13" font-weight="700">BKE/DNA</text>
+  <rect x="325" y="20" width="125" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="387" y="50" text-anchor="middle" font-size="13" font-weight="700">BMesh</text>
+  <rect x="450" y="20" width="125" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="512" y="50" text-anchor="middle" font-size="13" font-weight="700">Editors</text>
+  <rect x="575" y="20" width="125" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="637" y="50" text-anchor="middle" font-size="13" font-weight="700">Depsgraph</text>
+  <rect x="700" y="20" width="125" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="762" y="50" text-anchor="middle" font-size="13" font-weight="700">Draw</text>
+  <rect x="825" y="20" width="135" height="50" fill="#efe8d8" stroke="#d6cfc2"/>
+  <text x="892" y="50" text-anchor="middle" font-size="13" font-weight="700">Cycles</text>
+
+  <rect x="20" y="70" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="96" text-anchor="middle" font-size="12">Object mode</text>
+  <rect x="200" y="70" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="70" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="450" y="70" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="70" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="70" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="825" y="70" width="135" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+
+  <rect x="20" y="112" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="138" text-anchor="middle" font-size="12">Edit mesh</text>
+  <rect x="200" y="112" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="112" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="450" y="112" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="112" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="112" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="825" y="112" width="135" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+
+  <rect x="20" y="154" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="180" text-anchor="middle" font-size="12">Modifiers</text>
+  <rect x="200" y="154" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="154" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="450" y="154" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="154" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="154" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="825" y="154" width="135" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+
+  <rect x="20" y="196" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="222" text-anchor="middle" font-size="12">Materials</text>
+  <rect x="200" y="196" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="196" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="450" y="196" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="196" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="196" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="825" y="196" width="135" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+
+  <rect x="20" y="238" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="264" text-anchor="middle" font-size="12">Viewport</text>
+  <rect x="200" y="238" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="238" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="450" y="238" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="238" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="238" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="825" y="238" width="135" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+
+  <rect x="20" y="280" width="180" height="42" fill="#f7f1e6" stroke="#d6cfc2"/>
+  <text x="110" y="306" text-anchor="middle" font-size="12">F12 render</text>
+  <rect x="200" y="280" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="325" y="280" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="450" y="280" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="575" y="280" width="125" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+  <rect x="700" y="280" width="125" height="42" fill="#fffdf8" stroke="#d6cfc2"/>
+  <rect x="825" y="280" width="135" height="42" fill="#f3d9cc" stroke="#d6cfc2"/>
+</svg>

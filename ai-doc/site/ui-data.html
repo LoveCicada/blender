@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI 与数据 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
+      <nav>
+        <a href="index.html">总览</a>
+        <a href="catalog.html">目录</a>
+        <a href="modules.html">模块</a>
+        <a href="responsibilities.html">职责</a>
+        <a href="features.html">功能</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="ui-data.html" class="is-active">UI–数据</a>
+        <a href="render.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">投影 4 · 地图级</p>
+      <h1>UI 怎样碰到数据</h1>
+      <p class="lede">先记这条链。函数级走读：<a href="b/index.html">数据</a>（DNA、RNA、Python UI、Operator、更新与撤销）。</p>
+    </section>
+
+    <figure class="figure">
+      <img src="diagrams/flow.svg" alt="从 UI RNA 到 BKE 再经 Depsgraph">
+      <figcaption>交互链停在「数据变了、图脏了」。像素是下一层的事，见渲染页。</figcaption>
+    </figure>
+
+    <p class="chain">
+      <a href="catalog.html#python-ui">Python / C UI</a>
+      <span class="arrow">→</span>
+      <a href="catalog.html#makesrna">RNA</a>
+      <span class="arrow">→</span>
+      <a href="catalog.html#windowmanager">Operator</a>
+      <span class="arrow">→</span>
+      <a href="catalog.html#blenkernel">BKE / DNA</a>
+      <span class="arrow">→</span>
+      notifier
+      <span class="arrow">→</span>
+      <a href="catalog.html#depsgraph">depsgraph</a>
+    </p>
+
+    <section class="panel">
+      <h2>记三件事就够</h2>
+      <ol>
+        <li>面板上的数字几乎都是 RNA 属性，绑定 DNA 字段或 getter/setter，不是另一份平行数据。</li>
+        <li>菜单和快捷键指向 <code>wmOperatorType</code>（<code>WM_operatortype_append</code>）。真正改网格的是 editors 里的 exec，不是 <code>bl_ui</code>。</li>
+        <li>改完要让别人知道：notifier / depsgraph 标脏。视口不会去轮询每个顶点。</li>
+      </ol>
+    </section>
+
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>和建模的衔接</h2>
+      <p>编辑模式多一个台阶：Operator → <a href="catalog.html#bmesh">BMesh</a> → 写回 <a href="catalog.html#blenkernel">Mesh</a>。物体模式没有这一步。细节归<a href="c/index.html">建模</a>。</p>
+    </section>
+
+    <p class="later">深讲已写：<a href="b/dna.html">DNA</a> · <a href="b/rna.html">RNA</a> · <a href="b/python-ui.html">Python UI</a> · <a href="b/operator.html">Operator</a> · <a href="b/update.html">更新与撤销</a>。</p>
+  </main>
+  <footer class="wrap">地图页。不要在这里展开每个面板文件。</footer>
+</body>
+</html>

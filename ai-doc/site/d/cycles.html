@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cycles · 渲染 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="index.html" class="is-active">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#render">render</a> / <a href="../catalog.html#cycles">Cycles</a></p>
+      <h1>F12 按引擎字符串分发</h1>
+      <p class="lede"><code>RENDER_OT_render</code>（<code>editors/render/render_internal.cc</code>）→ <code>RE_RenderFrame</code> → <code>RE_engine_render</code> → <code>RE_engines_find(scene.r.engine)</code>。未知 id 回落到 <code>BLENDER_EEVEE</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">渲染入口</a>
+      <a href="depsgraph.html">Depsgraph</a>
+      <a href="draw.html">Draw / 视口</a>
+      <a href="eevee.html">EEVEE / Workbench</a>
+      <a href="cycles.html" class="is-active">F12 / Cycles</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/d-fork.svg" alt="F12 使用 DAG_EVAL_RENDER">
+      <figcaption>F12 用渲染图求值（Render 修改器级别），再进引擎回调。</figcaption>
+    </figure>
+    <section class="panel">
+      <h2>Cycles 怎么接到场景</h2>
+      <p>Python <code>CyclesRender</code>（<code>intern/cycles/blender/addon/__init__.py</code>，<code>bl_idname = 'CYCLES'</code>）→ <code>_cycles.render</code>。<code>BlenderSync::sync_data</code>（<code>intern/cycles/blender/sync.cpp</code>）从 depsgraph 迭代求值物体；网格 <code>object_to_mesh</code>（<code>util.h</code>）。</p>
+      <ul>
+        <li><code>session/</code>：采样、分块、缓冲</li>
+        <li><code>scene/</code>：Cycles 自己的 Object / Shader / Integrator 节点</li>
+        <li><code>integrator/</code>：<code>PathTrace</code></li>
+        <li><code>kernel/</code>：SVM / 闭包</li>
+        <li><code>device/</code>：CPU / CUDA / …（预编译库，分析不拉）</li>
+      </ul>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>节点 → 闭包</h2>
+      <p><code>intern/cycles/blender/shader.cpp</code>：<code>sync_materials</code> → <code>add_nodes</code> / <code>add_node</code>，目标 <code>SHD_OUTPUT_CYCLES</code>，再 <code>SVMCompiler</code>。运行时 <code>kernel/svm/closure.h</code>。与 EEVEE 的 <code>GPU_material_from_nodetree</code> 分道。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>和建模收束</h2>
+      <p>Cycles 看到的是求值网格（修改器已按 Render 模式应用）。编辑模式的 BMesh 不会直接进 kernel。改拓扑必须写回并标脏——B + C 已经把这条说完。</p>
+    </section>
+    <p class="later">Hydra、外部引擎只承认 <code>source/blender/render/hydra</code> 存在。合成在 F12 pipeline 里另有一条，本轮不写。</p>
+  </main>
+  <footer class="wrap">主线到此可以闭环：操作 → 数据 → 求值 → 像素。</footer>
+</body>
+</html>

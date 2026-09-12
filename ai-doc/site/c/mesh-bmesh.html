@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mesh / BMesh · 建模 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="index.html" class="is-active">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#blenkernel">blenkernel</a> / <a href="../catalog.html#bmesh">bmesh</a></p>
+      <h1>为什么编辑不用数组网格</h1>
+      <p class="lede">持久 <code>Mesh</code> 是按域打包的数组 + 属性，适合求值、绘制、存盘。挤出、溶解需要「这个面的邻边」——那是半边 <code>BMesh</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">建模入口</a>
+      <a href="mesh-bmesh.html" class="is-active">Mesh / BMesh</a>
+      <a href="editmode.html">进出编辑模式</a>
+      <a href="ops.html">挤出与 BMO</a>
+      <a href="modifiers.html">修改器</a>
+    </p>
+    <section class="panel">
+      <h2>持久 Mesh</h2>
+      <p>DNA 字段见<a href="../b/dna.html">数据 · DNA</a>。<code>Mesh::runtime</code>（<code>BKE_mesh_types.hh</code> 的 <code>MeshRuntime</code>）<strong>不进文件</strong>。编辑态指针是：</p>
+      <pre class="src">/* MeshRuntime */
+std::shared_ptr&lt;BMEditMesh&gt; edit_mesh;
+/* plus mesh_eval, wrapper_type, batch_cache, ... */</pre>
+      <p><code>BMEditMesh</code>（<code>BKE_editmesh.hh</code>）：<code>BMesh *bm</code>、looptris、selectmode、<code>needs_flush_to_id</code>。访问：<code>BKE_editmesh_from_object</code>（<code>blenkernel/intern/editmesh.cc</code>）。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>BMesh 元素</h2>
+      <p><code>source/blender/bmesh/bmesh_class.hh</code>：每个元素带 <code>BMHeader.hflag</code>。</p>
+      <ul>
+        <li><code>BMVert</code>：坐标、盘状边 <code>e</code></li>
+        <li><code>BMEdge</code>：两端点、径向环</li>
+        <li><code>BMLoop</code>：面角，绕面 <code>next/prev</code>，绕边 <code>radial_*</code></li>
+        <li><code>BMFace</code>：<code>l_first</code>、材质号</li>
+      </ul>
+      <p>选择位 <code>BM_ELEM_SELECT</code>（<code>hflag</code> 第 0 位）。测试：<code>BM_elem_flag_test</code>；写入：<code>BM_elem_select_set</code>。网格上还有 <code>totvertsel</code> 等计数。</p>
+    </section>
+    <p class="later">wrapper 类型 <code>ME_WRAPPER_TYPE_BMESH</code> 让绘制在未写成数组前也能吃编辑网格。</p>
+  </main>
+  <footer class="wrap"><a href="editmode.html">下一页：进出编辑模式</a></footer>
+</body>
+</html>

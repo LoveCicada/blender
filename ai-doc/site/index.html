@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>总览 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>数据 · 建模 · 渲染 · 非官方</small></a>
+      <nav>
+        <a href="index.html" class="is-active">总览</a>
+        <a href="catalog.html">目录</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="modules.html">模块</a>
+        <a href="ui-data.html">UI–数据</a>
+        <a href="render.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">地图 · 数据 · 建模 · 渲染</p>
+      <h1>这套笔记学什么</h1>
+      <p class="lede">搞清 Blender <strong>怎么设计</strong>、<strong>支持哪些功能</strong>。权威正文在<a href="catalog.html">子系统目录</a>。深讲：<a href="b/index.html">数据</a> · <a href="c/index.html">建模</a> · <a href="d/index.html">渲染</a>。</p>
+    </section>
+
+    <h2>五套划分怎么对照</h2>
+    <div class="grid-5">
+      <a class="card" href="modules.html">
+        <div class="n">01</div>
+        <h3>按模块</h3>
+        <p>源码目录怎么切：DNA、BKE、editors、draw、Cycles…</p>
+      </a>
+      <a class="card" href="responsibilities.html">
+        <div class="n">02</div>
+        <h3>按职责</h3>
+        <p>布局、运行时、命令、求值、视口、离线渲染各管一层。</p>
+      </a>
+      <a class="card" href="features.html">
+        <div class="n">03</div>
+        <h3>按功能</h3>
+        <p>物体模式、改网格、修改器、材质、视口、F12 挂到哪些条目。</p>
+      </a>
+      <a class="card" href="b/index.html">
+        <div class="n">04</div>
+        <h3>UI ↔ 数据</h3>
+        <p>地图在 UI–数据页。深讲：DNA / RNA / Operator / 更新。</p>
+      </a>
+      <a class="card" href="d/index.html">
+        <div class="n">05</div>
+        <h3>渲染</h3>
+        <p>求值后分道。深讲：Depsgraph / Draw / EEVEE / Cycles。</p>
+      </a>
+    </div>
+
+    <h2>从操作到像素经过哪些层</h2>
+    <p>改一个顶点：快捷键或按钮 → RNA 找到 Operator → 改 BMesh/Mesh → notifier 标脏 → Depsgraph 求值 → 视口重画。按 F12：同一份求值结果交给 Cycles，<strong>不走</strong>视口那条像素管线。</p>
+    <figure class="figure">
+      <img src="diagrams/flow.svg" alt="UI 到 Depsgraph 再分到视口绘制或 Cycles">
+      <figcaption>最短数据流。分道点在 Depsgraph 之后：上面是交互帧，下面是离线出图。</figcaption>
+    </figure>
+
+    <div class="grid-2">
+      <section class="panel">
+        <h2>读完应能说出</h2>
+        <ul>
+          <li>编辑模式的网格为什么先在 <code>bmesh</code> 里，而不是直接改渲染用的 Mesh。</li>
+          <li>修改器为什么多半发生在 <code>depsgraph</code> 求值时，而不是点按钮的那一刻。</li>
+          <li>视口里的 EEVEE 和 F12 的 Cycles 共享场景求值，不共享同一套 shader 后端。</li>
+        </ul>
+      </section>
+      <section class="panel">
+        <h2>本轮不写</h2>
+        <p>合成、序列、雕刻细操、IO 格式、Python API 全集、GHOST 平台层。数据 / 建模 / 渲染主线已写完。</p>
+        <p class="note">约束：只分析 <code>ai-doc/</code>。不要为了看图去跑 <code>make update</code> 或拉 <code>lib/</code>。</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树。不是官方手册。约束见 <a href="../constraints.md">constraints.md</a>。</footer>
+</body>
+</html>

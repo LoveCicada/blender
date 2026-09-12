@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 360" role="img">
+  <title>Responsibility layers</title>
+  <rect x="20" y="16" width="940" height="38" fill="#efe2cf" stroke="#1c1917"/>
+  <text x="36" y="41" font-size="14" font-weight="700" fill="#1c1917">1 Data layout - makesdna</text>
+  <text x="400" y="41" font-size="12" fill="#44403c">How Mesh / Object / Scene sit on disk</text>
+  <rect x="20" y="58" width="940" height="38" fill="#f6e6c8" stroke="#1c1917"/>
+  <text x="36" y="83" font-size="14" font-weight="700" fill="#1c1917">2 Reflection - makesrna</text>
+  <text x="400" y="83" font-size="12" fill="#44403c">How UI and Python reach those fields</text>
+  <rect x="20" y="100" width="940" height="38" fill="#f3d9cc" stroke="#1c1917"/>
+  <text x="36" y="125" font-size="14" font-weight="700" fill="#1c1917">3 Runtime - blenkernel</text>
+  <text x="400" y="125" font-size="12" fill="#44403c">ID lifetime, copy, update</text>
+  <rect x="20" y="142" width="940" height="38" fill="#f0cfc0" stroke="#1c1917"/>
+  <text x="36" y="167" font-size="14" font-weight="700" fill="#1c1917">4 Topology edit - bmesh</text>
+  <text x="400" y="167" font-size="12" fill="#44403c">Edit-mode connectivity, not render mesh</text>
+  <rect x="20" y="184" width="940" height="38" fill="#e8d4b8" stroke="#1c1917"/>
+  <text x="36" y="209" font-size="14" font-weight="700" fill="#1c1917">5 Commands - WM + editors</text>
+  <text x="400" y="209" font-size="12" fill="#44403c">Key press becomes an undoable operator</text>
+  <rect x="20" y="226" width="940" height="38" fill="#dceceb" stroke="#1c1917"/>
+  <text x="36" y="251" font-size="14" font-weight="700" fill="#1c1917">6 Evaluation - depsgraph</text>
+  <text x="400" y="251" font-size="12" fill="#44403c">Modifiers / constraints applied for draw</text>
+  <rect x="20" y="268" width="940" height="38" fill="#d7e6d7" stroke="#1c1917"/>
+  <text x="36" y="293" font-size="14" font-weight="700" fill="#1c1917">7 Viewport - draw / gpu / EEVEE / Workbench</text>
+  <text x="400" y="293" font-size="12" fill="#44403c">Interactive frames</text>
+  <rect x="20" y="310" width="940" height="38" fill="#e4d7ee" stroke="#1c1917"/>
+  <text x="36" y="335" font-size="14" font-weight="700" fill="#1c1917">8 Offline - render + Cycles</text>
+  <text x="400" y="335" font-size="12" fill="#44403c">F12; same evaluation, different pixels</text>
+</svg>

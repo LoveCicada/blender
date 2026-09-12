@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>修改器 · 建模 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="index.html" class="is-active">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#modifiers">modifiers</a></p>
+      <h1>栈在物体上，算在求值时</h1>
+      <p class="lede">DNA：<code>Object.modifiers</code>（<code>DNA_object_types.h</code>）。点「添加修改器」只往链表塞 <code>ModifierData</code>。真正变形发生在 depsgraph 的 <code>BKE_object_eval_uber_data</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">建模入口</a>
+      <a href="mesh-bmesh.html">Mesh / BMesh</a>
+      <a href="editmode.html">进出编辑模式</a>
+      <a href="ops.html">挤出与 BMO</a>
+      <a href="modifiers.html" class="is-active">修改器</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/c-modifier-eval.svg" alt="修改器求值后分 Realtime 与 Render">
+      <figcaption>同一套 <code>mesh_calc_modifiers</code>。差别是 <code>eModifierMode_Realtime</code> 还是 <code>Render</code>，以及细分的视口/渲染级别。</figcaption>
+    </figure>
+    <section class="panel">
+      <h2>注册</h2>
+      <p><code>ModifierTypeInfo</code>（<code>BKE_modifier.hh</code>）：<code>modify_mesh</code> / <code>modify_geometry_set</code> / <code>deform_verts</code>。<code>modifiers/intern/MOD_util.cc</code> 的 <code>modifier_type_init</code> 填表；启动 <code>BKE_modifier_init</code>。查找：<code>BKE_modifier_get_info</code>。</p>
+      <p>例子：<code>modifierType_Subsurf</code>（<code>MOD_subsurf.cc</code>，可开编辑模式）、<code>modifierType_Mirror</code>（<code>MOD_mirror.cc</code> 的 <code>mirrorModifier__doMirror</code>）。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>求值链</h2>
+      <pre class="src">GEOMETRY_EVAL -> BKE_object_eval_uber_data
+  BKE_object_handle_data_update
+    mesh_data_update
+      edit_mesh ? editbmesh_calc_modifiers
+               : mesh_calc_modifiers
+        BKE_modifier_modify_mesh -> mti->modify_mesh
+  BKE_object_eval_assign_data / geometry_set_eval</pre>
+      <p>编辑模式先 <code>BKE_mesh_wrapper_from_editmesh</code>。Cage / 最终：<code>BKE_object_get_editmesh_eval_cage</code> 与 <code>_final</code>。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>Apply 不是求值</h2>
+      <p><code>OBJECT_OT_modifier_apply</code>（<code>object_modifier.cc</code>）把当前求值结果烤进<strong>原始</strong> Mesh（<code>BKE_mesh_nomain_to_mesh</code>）并删掉该修改器。编辑模式里不能 Apply。求值结果在下次标脏后会重算，不写回文件里的基网格。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>geometry / 几何节点</h2>
+      <p><code>source/blender/geometry/</code> 是无状态算法库。几何节点是修改器 <code>modifierType_Nodes</code>（<code>MOD_nodes.cc</code>），<code>modify_geometry_set</code> 跑节点树。它不替换 BMesh 编辑。</p>
+    </section>
+    <p class="later">下一轮 D 从这份 <code>geometry_set_eval</code> 接着画或送给 Cycles。</p>
+  </main>
+  <footer class="wrap"><a href="../d/index.html">下一章：渲染</a></footer>
+</body>
+</html>

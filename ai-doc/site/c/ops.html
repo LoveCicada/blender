@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BMO · 建模 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../b/index.html">数据</a>
+        <a href="index.html" class="is-active">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker"><a href="../catalog.html#editors-mesh">editors/mesh</a></p>
+      <h1>WM Operator 下面还有一层 BMO</h1>
+      <p class="lede">数据章的 <code>MESH_OT_subdivide</code> 直接调 <code>BM_mesh_esubdivide</code>。挤出、溶解走统一运算符表：字符串名 + 槽位 + <code>exec</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">建模入口</a>
+      <a href="mesh-bmesh.html">Mesh / BMesh</a>
+      <a href="editmode.html">进出编辑模式</a>
+      <a href="ops.html" class="is-active">挤出与 BMO</a>
+      <a href="modifiers.html">修改器</a>
+    </p>
+    <section class="panel">
+      <h2>表在哪</h2>
+      <p><code>bmesh/intern/bmesh_opdefines.cc</code> 的 <code>bmo_opdefines[]</code>。调度：<code>BMO_op_init</code> / <code>BMO_op_exec</code>（<code>bmesh_operators.cc</code>）。编辑器常用 <code>EDBM_op_callf(em, op, "dissolve_verts verts=%hv ...", BM_ELEM_SELECT)</code>，把当前选择填进槽。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>挤出</h2>
+      <pre class="src">MESH_OT_extrude_region          /* editmesh_extrude.cc */
+  edbm_extrude_ex
+    BMO_op_init(..., "extrude_face_region")
+    BMO_op_exec
+      bmo_extrude_face_region_exec  /* bmo_extrude.cc */
+  EDBM_update</pre>
+      <p>用户菜单里常见宏 <code>MESH_OT_extrude_region_move</code>：挤出再接变换（<a href="../catalog.html#editors-transform">transform</a> modal）。</p>
+    </section>
+    <section class="panel" style="margin-top:0.9rem">
+      <h2>溶解</h2>
+      <p><code>"dissolve_verts"</code> → <code>bmo_dissolve_verts_exec</code>（<code>bmo_dissolve.cc</code>）→ <code>MESH_OT_dissolve_verts</code>（<code>editmesh_tools.cc</code>）。和细分一样：poll 仍是 <code>ED_operator_editmesh</code>。</p>
+    </section>
+    <p class="later">不列完整 BMO 表。选择历史、自动合并留给以后按需补。</p>
+  </main>
+  <footer class="wrap"><a href="modifiers.html">下一页：修改器</a></footer>
+</body>
+</html>
