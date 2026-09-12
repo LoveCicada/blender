@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>词汇表 · Blender 学习站</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="index.html">Blender 学习站<small>词汇表 · 非官方</small></a>
+            <nav>
+        <a href="index.html">总览</a>
+        <a href="path/index.html">路径</a>
+        <a href="catalog.html">目录</a>
+        <a href="qa/index.html">问答</a>
+        <a href="b/index.html">数据</a>
+        <a href="c/index.html">建模</a>
+        <a href="d/index.html">渲染</a>
+        <a href="../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">工具页 · 随课程生长</p>
+      <h1>词汇表</h1>
+      <p class="lede">课里第一次出现的术语先在这里落地。每条一两句，链到首次使用的课。按主题分组，组内按出场顺序。</p>
+    </section>
+
+    <h2>工具与读码</h2>
+    <article id="bpy" class="entry">
+      <h2>bpy</h2>
+      <p>Blender 的 Python API 模块。官方二进制内置 Python 解释器，控制台里 <code>import bpy</code> 后，场景里几乎所有数据都能摸到。本路径的实验都靠它，不用编译。</p>
+      <p class="later">首次使用：<a href="path/0-1.html">0.1 工具就位</a></p>
+    </article>
+    <article id="console" class="entry">
+      <h2>Python 控制台</h2>
+      <p>Blender 里的交互式解释器（Scripting 工作区，或任意区域切成 Console）。<code>Ctrl+Space</code> 补全，<code>dir()</code> 列成员。输入一行立刻看到结果，是观察设计的最近距离。</p>
+      <p class="later">首次使用：<a href="path/0-1.html">0.1 工具就位</a></p>
+    </article>
+    <article id="source-tree" class="entry">
+      <h2>源码树</h2>
+      <p>本仓库 checkout 出来的 Blender 源码。读码时主要逛三个目录：<code>source/</code>（主体）、<code>intern/</code>（Cycles 等内部库）、<code>scripts/</code>（Python UI）。</p>
+      <p class="later">首次使用：<a href="path/0-1.html">0.1 工具就位</a>；分工详表见 <a href="../overview.md">overview.md</a></p>
+    </article>
+    <article id="symbol" class="entry">
+      <h2>符号</h2>
+      <p>函数名、结构体名、宏名的统称。读码的基本功是「给一个符号，能在源码树里 grep 到它的定义」。课里所有英文标识符都是真实符号，可以在树里搜到。</p>
+      <p class="later">首次使用：<a href="path/0-1.html">0.1 工具就位</a></p>
+    </article>
+
+    <h2>数据块与 ID</h2>
+    <article id="datablock" class="entry">
+      <h2>数据块（data-block）</h2>
+      <p>Blender 里「一个东西」的统称：物体、网格、材质、场景、相机……每个数据块开头都是同一个 <a href="#id">ID</a> 头，所以它们共享名字、用户计数、存盘规则。</p>
+      <p class="later">首次使用：<a href="path/1-1.html">1.1 一切都是数据块</a></p>
+    </article>
+    <article id="id" class="entry">
+      <h2>ID</h2>
+      <p>每个数据块开头的公共结构（<code>DNA_ID.h</code> 的 <code>struct ID</code>）。里面有名字（前两字节是类型码，网格是 <code>ME</code>）、用户计数 <code>us</code>、脏标记 <code>recalc</code>、自定义属性 <code>properties</code>。</p>
+      <p class="later">首次使用：<a href="path/1-1.html">1.1 一切都是数据块</a></p>
+    </article>
+    <article id="users" class="entry">
+      <h2>用户计数（users）</h2>
+      <p>ID 头上的整数：这份数据被几个地方引用。两个物体共用一份网格，网格的 users 就是 2。减到 0 的数据块才可能被清掉。</p>
+      <p class="later">首次使用：<a href="path/1-1.html">1.1 一切都是数据块</a></p>
+    </article>
+    <article id="fake-user" class="entry">
+      <h2>伪用户（fake user）</h2>
+      <p>数据块上的一个开关（bpy 里 <code>use_fake_user</code>）。打开后即使没人引用也存盘保留，防止「删掉最后一个使用者，数据块跟着消失」。</p>
+      <p class="later">首次使用：<a href="path/1-1.html">1.1 一切都是数据块</a></p>
+    </article>
+    <article id="orphan" class="entry">
+      <h2>孤儿数据块（orphan）</h2>
+      <p>用户计数为 0 且没有伪用户的数据块。存盘时默认不写进去；bpy 里可用 <code>bpy.data.orphans_purge()</code> 立即清理。</p>
+      <p class="later">首次使用：<a href="path/1-1.html">1.1 一切都是数据块</a></p>
+    </article>
+
+    <h2>DNA 与文件</h2>
+    <article id="dna" class="entry">
+      <h2>DNA</h2>
+      <p>写进 <code>.blend</code> 的 C 结构布局，定义在 <code>source/blender/makesdna/DNA_*_types.h</code>。它只回答「这块内存怎么排」，不实现任何算法。磁盘上的真相。</p>
+      <p class="later">首次使用：<a href="path/1-2.html">1.2 DNA 是磁盘布局</a></p>
+    </article>
+    <article id="sdna" class="entry">
+      <h2>SDNA</h2>
+      <p>构建期由 makesdna 工具扫描 DNA 头文件编出的「结构说明书」表。它既是当前进程的布局描述，也原样写进每个 .blend 的 <code>DNA1</code> 块，供旧版本对齐字段。</p>
+      <p class="later">首次使用：<a href="path/1-2.html">1.2 DNA 是磁盘布局</a></p>
+    </article>
+    <article id="blend-file" class="entry">
+      <h2>.blend / DNA1</h2>
+      <p>Blender 的存盘文件。里面按 DNA 布局顺序存所有数据块，末尾带 <code>DNA1</code> 块（这份文件用的 SDNA 表）。打开文件 = 按 DNA1 重建内存结构。</p>
+      <p class="later">首次使用：<a href="path/1-2.html">1.2 DNA 是磁盘布局</a></p>
+    </article>
+    <article id="runtime" class="entry">
+      <h2>runtime（运行时字段）</h2>
+      <p>结构上明确不存盘的指针，例如 <code>Mesh.runtime</code>（<code>MeshRuntime</code>）。编辑态 BMesh、求值缓存都挂在这里。保存前必须能从中重建出纯 DNA 数据。</p>
+      <p class="later">首次使用：<a href="path/1-2.html">1.2 DNA 是磁盘布局</a></p>
+    </article>
+
+    <h2>RNA 与 Main</h2>
+    <article id="rna" class="entry">
+      <h2>RNA</h2>
+      <p>属性反射层：给 DNA 字段和运行时函数起对外名字、绑偏移、挂 update 回调。面板、Python <a href="#bpy">bpy</a>、Operator 属性都只认 RNA，不直接扫 C 结构体。</p>
+      <p class="later">首次使用：<a href="path/1-3.html">1.3 RNA 是对外门面</a></p>
+    </article>
+    <article id="bl-rna" class="entry">
+      <h2>bl_rna</h2>
+      <p>bpy 里每个类型 / 实例都带的 RNA 自省入口。<code>bpy.types.Mesh.bl_rna.properties</code> 能列出 Mesh 对外暴露的全部属性——这就是 RNA 层在 Python 里的样子。</p>
+      <p class="later">首次使用：<a href="path/1-3.html">1.3 RNA 是对外门面</a></p>
+    </article>
+    <article id="main" class="entry">
+      <h2>Main</h2>
+      <p>进程里全部数据块的数据库（<code>BKE_main.hh</code> 的 <code>struct Main</code>），按类型串起来的 ID 集合。bpy 里的 <code>bpy.data</code> 就是它的 Python 视图。一个 Blender 进程一份 Main。</p>
+      <p class="later">首次使用：<a href="path/1-4.html">1.4 Main 与 Scene</a></p>
+    </article>
+    <article id="scene" class="entry">
+      <h2>Scene</h2>
+      <p>「一幕场景」数据块：帧范围、渲染设置、当前 View Layer 指针等。它只是 Main 里的一块；一个文件可以有多个 Scene，<code>bpy.context.scene</code> 是用户正在看的那个。</p>
+      <p class="later">首次使用：<a href="path/1-4.html">1.4 Main 与 Scene</a></p>
+    </article>
+
+    <h2>后面阶段预告</h2>
+    <article id="operator" class="entry">
+      <h2>Operator</h2>
+      <p>一次用户命令的封装：可撤销、可快捷键、可被 Python 点名（<code>bpy.ops.*</code>）。有 poll / invoke / exec 三个回调。阶段 2 的主角。</p>
+      <p class="later">首次使用：阶段 2（未开）；参考 <a href="b/operator.html">数据 · Operator / WM</a></p>
+    </article>
+    <article id="depsgraph" class="entry">
+      <h2>depsgraph（求值图）</h2>
+      <p>把「谁依赖谁」编成图：标脏一块几何，只重算相关节点。视口和 F12 各用一张图。阶段 4 的主角。</p>
+      <p class="later">首次使用：阶段 4（未开）；参考 <a href="d/depsgraph.html">渲染 · Depsgraph</a></p>
+    </article>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树。术语随课程增补。</footer>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学习路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">课程制主线 · 计划见 <a href="../../plan-KimiK3.md">plan-KimiK3</a></p>
+      <h1>按顺序学，按课动手</h1>
+      <p class="lede">六阶段二十课。每课六段：<strong>目标 → 概念 → 源码走读 → 动手实验 → 自检 → 拓展</strong>。实验在官方 Blender 的 Python 控制台里做，不用编译。术语卡住就查<a href="../glossary.html">词汇表</a>。</p>
+    </section>
+    <figure class="figure">
+      <pre class="mermaid">flowchart LR
+  s0["阶段 0 环境与读码"] --> s1["阶段 1 数据地基"]
+  s1 --> s2["阶段 2 一次点击的旅程"]
+  s2 --> s3["阶段 3 建模核心"]
+  s3 --> s4["阶段 4 求值与分身"]
+  s4 --> s5["阶段 5 渲染分道"]
+  s5 --> s6["阶段 6 自选专题"]</pre>
+      <figcaption>主线顺序。建模在渲染之前，因为渲染分道的前提是知道数据怎么被改脏。</figcaption>
+    </figure>
+
+    <section class="panel">
+      <h2>阶段 0 · 环境与读码</h2>
+      <ol class="steps">
+        <li><a href="0-1.html">0.1 工具就位</a>：控制台、补全、在源码树里搜符号。</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>阶段 1 · 数据地基：ID / DNA / RNA / Main</h2>
+      <ol class="steps">
+        <li><a href="1-1.html">1.1 一切都是数据块</a>：ID 头、用户计数、伪用户。</li>
+        <li><a href="1-2.html">1.2 DNA 是磁盘布局</a>：哪些字段进 .blend，哪些不进。</li>
+        <li><a href="1-3.html">1.3 RNA 是对外门面</a>：面板与 bpy 为什么都经过 RNA。</li>
+        <li><a href="1-4.html">1.4 Main 与 Scene</a>：进程里的 ID 数据库 vs 一幕场景。</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>后续阶段（未开）</h2>
+      <ul>
+        <li><strong>阶段 2 · 一次点击的旅程</strong>：Operator；属性链；标脏与通知。</li>
+        <li><strong>阶段 3 · 建模核心</strong>：Mesh vs BMesh；bmesh 模块实验；编辑模式；挤出与 BMO；修改器。</li>
+        <li><strong>阶段 4 · 求值与分身</strong>：depsgraph 与 COW；视口图 vs 渲染图。</li>
+        <li><strong>阶段 5 · 渲染分道</strong>：视口一帧；EEVEE；F12 链；Cycles；颜色管理。</li>
+        <li><strong>阶段 6 · 自选专题</strong>：几何节点 / 合成 / 雕刻 / UV，按兴趣开。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>怎么用这条路径</h2>
+      <ul>
+        <li>按顺序读。后面的课假定前面的实验做过。</li>
+        <li>实验必做：在控制台里亲手看到现象，再去源码找原因。</li>
+        <li>每课末尾的自检链到<a href="../qa/index.html">二百问答</a>，合上笔记能答才算过。</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>参考区（查字典用，不按顺序读）</h2>
+      <ul>
+        <li><a href="../catalog.html">子系统目录</a>：21 条权威条目，职责 / 路径 / 邻居。</li>
+        <li>五套投影：<a href="../modules.html">模块</a> · <a href="../responsibilities.html">职责</a> · <a href="../features.html">功能</a> · <a href="../ui-data.html">UI–数据</a> · <a href="../render.html">渲染地图</a>。</li>
+        <li>深讲：<a href="../b/index.html">数据</a> · <a href="../c/index.html">建模</a> · <a href="../d/index.html">渲染</a>；<a href="../qa/index.html">二百问答</a>当自测题库。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。不是官方手册。</footer>
+</body>
+</html>

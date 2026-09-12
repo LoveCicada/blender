@@ -27,6 +27,13 @@
   { "title": "问答 · 功能", "path": "qa/features.html", "keywords": "Q051-100" },
   { "title": "问答 · UI–数据", "path": "qa/ui-data.html", "keywords": "Q101-150" },
   { "title": "问答 · 渲染", "path": "qa/render.html", "keywords": "Q151-200" },
+  { "title": "学习路径", "path": "path/index.html", "keywords": "课程 阶段 顺序 实验 bpy" },
+  { "title": "词汇表", "path": "glossary.html", "keywords": "术语 ID DNA RNA Main 数据块 用户计数" },
+  { "title": "0.1 工具就位", "path": "path/0-1.html", "keywords": "控制台 bpy 补全 grep 源码树" },
+  { "title": "1.1 一切都是数据块", "path": "path/1-1.html", "keywords": "ID 用户计数 伪用户 orphans_purge" },
+  { "title": "1.2 DNA 是磁盘布局", "path": "path/1-2.html", "keywords": "DNA SDNA DNA1 runtime 存盘" },
+  { "title": "1.3 RNA 是对外门面", "path": "path/1-3.html", "keywords": "RNA bl_rna 属性 标识符 显示名" },
+  { "title": "1.4 Main 与 Scene", "path": "path/1-4.html", "keywords": "Main bpy.data Scene 场景 数据库" },
   { "title": "Archify 运行时图", "path": "../archify/blender-runtime.html", "keywords": "邻居图 architecture" },
   { "title": "Archify 主路径", "path": "../archify/blender-mainpath.html", "keywords": "dataflow 按钮 像素" }
 ]

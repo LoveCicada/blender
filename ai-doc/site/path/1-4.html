@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.4 Main 与 Scene · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 1 · 数据地基 · 第 4 课</p>
+      <h1>1.4 Main 与 Scene</h1>
+      <p class="lede"><a href="../glossary.html#main">Main</a> 是进程里全部数据块的数据库；<a href="../glossary.html#scene">Scene</a> 只是其中一块。一个文件可以有多个 Scene，但只有一份 Main。<code>bpy.data</code> 就是 Main 的 Python 视图。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="1-3.html">1.3 RNA</a>
+      <a href="1-4.html" class="is-active">1.4 Main 与 Scene</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出 Main 与 Scene 的关系：数据库 vs 其中一块数据。</li>
+        <li>分清「文件里有」与「当前场景里有」：物体属于 Main，场景只是组织方式。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：数据库与一幕戏</h2>
+      <p>前三节课的数据块都存在哪？答案是 Main：进程内按类型串起来的 ID 集合。你在控制台敲的 <code>bpy.data.objects</code>、<code>bpy.data.meshes</code>，列的都是 Main 里的内容——不管它属于哪个场景。</p>
+      <p>Scene 是 Main 里的一块普通数据块，装的是「一幕戏」的设置：帧范围、渲染引擎、分辨率、指向当前 View Layer 的指针。物体并不「住在」某个 Scene 里；它们住在 Main 里，被场景的集合（Collection）引用。所以同一个物体可以出现在多个场景，也可以哪个场景都不出现（还留在文件里）。</p>
+      <figure class="figure">
+        <pre class="mermaid">flowchart TB
+  main["Main = bpy.data"]
+  main --> s1["Scene"]
+  main --> s2["Scene.001"]
+  main --> obs["Object 们"]
+  main --> mes["Mesh 们"]
+  s1 -.引用.-> obs
+  ctx["bpy.context.scene"] -.当前正在看.-> s1</pre>
+        <figcaption>物体属于 Main，不属于某个 Scene。切场景只是换「正在看哪一幕」，数据库不变。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读</h2>
+      <p><code>source/blender/blenkernel/BKE_main.hh:241</code> 的 <code>struct Main</code>：按类型分的 ID 列表、文件路径、库链接关系都在这。Operator 里的 <code>CTX_data_main(C)</code> 拿的就是它。</p>
+      <p><code>source/blender/makesdna/DNA_scene_types.h:2863</code> 的 <code>struct Scene</code>：开头同样是 <code>ID id;</code>——Scene 自己也是数据块，遵守 1.1 课的全套规则。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：两个场景，一份数据库</h2>
+      <pre class="src">import bpy
+len(bpy.data.scenes)        # 预期：1
+bpy.context.scene.name      # 预期：'Scene'
+len(bpy.data.objects)       # 记下这个数，比如 1（默认立方体）</pre>
+      <pre class="src">s2 = bpy.data.scenes.new("Second")
+len(bpy.data.scenes)        # 预期：2
+bpy.context.window.scene = s2
+bpy.context.scene.name      # 预期：'Second' —— 界面顶部场景名也变了
+len(bpy.data.objects)       # 预期：和刚才一样，物体还在 Main 里</pre>
+      <pre class="src">bpy.context.scene.collection.objects   # 新场景的集合是空的
+bpy.context.window.scene = bpy.data.scenes["Scene"]   # 切回去</pre>
+      <p>体会：新建场景没有复制任何物体；<code>bpy.data</code> 从头到尾没变。变的是「正在看哪一幕」。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q006">Q006</a>：Main 是什么，和 Scene 有何不同？</li>
+        <li><a href="../qa/modules.html#q007">Q007</a>：Object.data 指向谁，这个指针属于哪一层？</li>
+        <li>合上笔记：解释「为什么删掉一个场景，文件里的物体不一定少」。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展与阶段验收</h2>
+      <ul>
+        <li><a href="../catalog.html#blenkernel">目录 · blenkernel</a>：Main 的创建与 ID 生命周期。</li>
+        <li><a href="../b/index.html">深讲 · 数据入口</a>：DNA / RNA / Operator / 更新的全局图。</li>
+      </ul>
+      <p><strong>阶段 1 验收</strong>：不看笔记说出 ID / DNA / RNA / Main 各管什么；在控制台演示一次用户计数增减。过了就进阶段 2：一次点击的完整旅程。</p>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。上一课：<a href="1-3.html">1.3 RNA 是对外门面</a></footer>
+</body>
+</html>

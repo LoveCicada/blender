@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1.2 DNA 是磁盘布局 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 1 · 数据地基 · 第 2 课</p>
+      <h1>1.2 DNA 是磁盘布局</h1>
+      <p class="lede">按 Ctrl+S 存下的 .blend 里到底有什么？答案是 <a href="../glossary.html#dna">DNA</a>：一组 C 结构定义，只回答「这块内存怎么排」。它不管挤出怎么算，也不管像素怎么画。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="1-1.html">1.1 数据块</a>
+      <a href="1-2.html" class="is-active">1.2 DNA</a>
+      <a href="1-3.html">1.3 RNA</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出哪些字段进 .blend、哪些不进（<a href="../glossary.html#runtime">runtime</a>）。</li>
+        <li>理解「打开文件 = 按布局说明书重建内存结构」，不是加载一棵场景树。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：布局说明书</h2>
+      <p><code>source/blender/makesdna/</code> 下的 <code>DNA_*_types.h</code> 是一群 C 结构体定义：<code>Mesh</code>、<code>Object</code>、<code>Scene</code>、<code>Material</code>……存盘时，Blender 按这些定义把每个数据块原样写进文件；读盘时按同一份定义重建。</p>
+      <p>跨版本怎么办？构建期工具 makesdna 会把这些头文件编成一张结构表（<a href="../glossary.html#sdna">SDNA</a>），原样塞进每个 .blend 的 <code>DNA1</code> 块。旧版本打开新文件时，拿文件里的表和自己的表逐成员对齐——字段没变就整块拷，变了就按成员重建。所以十几年的旧文件还能打开。</p>
+      <p>关键分界线：<strong>不是所有字段都进文件</strong>。结构上挂着 <code>runtime</code> 指针（运行时缓存，比如编辑态 BMesh）明确不存盘。保存前必须能从它重建出纯 DNA 数据。</p>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：Mesh 的布局</h2>
+      <p><code>source/blender/makesdna/DNA_mesh_types.h:147</code> 的 <code>struct Mesh</code>：</p>
+      <pre class="src">ID id;                 /* :154  上一课的 ID 头 */
+AnimData *adt;         /* 动画数据，紧跟 id */
+Material **mat;        /* 材质槽 */
+int verts_num;         /* :168  顶点数 */
+int edges_num, faces_num, corners_num;
+/* ... CustomData 属性层、标志位 ... */
+bke::MeshRuntime *runtime;   /* :345  不存盘 */</pre>
+      <p>对照着看：<code>verts_num</code> 进文件；<code>runtime</code> 不进。下一课会看到，RNA 给这些字段起对外名字时，也是挑着来。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：存盘前后，与摸不到的 runtime</h2>
+      <p>用默认启动场景（一个立方体），控制台执行：</p>
+      <pre class="src">import bpy
+me = bpy.context.object.data    # 立方体的 Mesh
+len(me.vertices)                # 预期：8
+len(me.polygons)                # 预期：6</pre>
+      <p>然后 <code>Ctrl+S</code> 存盘，<code>Ctrl+N</code> 重开再打开这个文件，再数一次：还是 8 和 6。顶点数、面数是 DNA 字段，进文件了。</p>
+      <pre class="src">me.runtime
+# 预期：AttributeError —— bpy 里根本没有这个属性
+[p.identifier for p in type(me).bl_rna.properties if "runtime" in p.identifier]
+# 预期：[] —— RNA 属性表里没有它</pre>
+      <p>这就是「不存盘」在 Python 侧的样子：连摸都摸不到。编辑模式里的半边网格就挂在 <code>runtime</code> 里——这也是为什么「保存文件」和「正在编辑的 BMesh」之间必须有一次格式转换（阶段 3 细讲）。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q005">Q005</a>：打开 .blend 是谁的工作？</li>
+        <li><a href="../qa/modules.html#q008">Q008</a>：为什么运行时指针可以不进 DNA？</li>
+        <li>合上笔记：解释「为什么旧版本 Blender 能打开新版本存的文件（字段没变太多的话）」。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../b/dna.html">深讲 · DNA</a>：<code>DNA1</code> 块、<code>DNA_struct_reconstruct</code> 的对齐细节。</li>
+        <li><a href="../catalog.html#makesdna">目录 · makesdna</a>：构建期工具的职责边界。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="1-3.html">1.3 RNA 是对外门面</a></footer>
+</body>
+</html>
