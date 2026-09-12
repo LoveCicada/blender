@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Blender 主路径：按钮到像素",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 560],
+    "views": [
+      {
+        "id": "command-split",
+        "label": "两条写入链",
+        "focus": ["panel", "keymap", "rna", "operator", "mesh"],
+        "note": "面板属性走 RNA；按钮和快捷键走 Operator，最后写同一份 Mesh / BMesh。"
+      },
+      {
+        "id": "eval-split",
+        "label": "求值后分道",
+        "focus": ["mesh", "depsgraph", "draw", "cycles"],
+        "note": "标脏后 depsgraph 求值；视口走 Draw/EEVEE，F12 走 Cycles。"
+      }
+    ]
+  },
+  "stages": [
+    { "label": "UI" },
+    { "label": "命令" },
+    { "label": "数据" },
+    { "label": "求值" },
+    { "label": "像素" }
+  ],
+  "nodes": [
+    {
+      "id": "panel",
+      "type": "frontend",
+      "label": "面板按钮",
+      "sublabel": "bl_ui layout",
+      "stage": 0,
+      "row": 0,
+      "tag": "只画控件"
+    },
+    {
+      "id": "keymap",
+      "type": "frontend",
+      "label": "快捷键",
+      "sublabel": "WM keymap",
+      "stage": 0,
+      "row": 2,
+      "tag": "事件"
+    },
+    {
+      "id": "rna",
+      "type": "backend",
+      "label": "RNA",
+      "sublabel": "makesrna",
+      "stage": 1,
+      "row": 0,
+      "tag": "属性名"
+    },
+    {
+      "id": "operator",
+      "type": "backend",
+      "label": "Operator",
+      "sublabel": "WM invoke / exec",
+      "stage": 1,
+      "row": 2,
+      "tag": "命令"
+    },
+    {
+      "id": "mesh",
+      "type": "database",
+      "label": "Mesh / BMesh",
+      "sublabel": "edit_mesh 真相",
+      "stage": 2,
+      "row": 1,
+      "tag": "DNA ID"
+    },
+    {
+      "id": "depsgraph",
+      "type": "backend",
+      "label": "Depsgraph",
+      "sublabel": "on_refresh",
+      "stage": 3,
+      "row": 1,
+      "tag": "Copy-on-eval"
+    },
+    {
+      "id": "draw",
+      "type": "frontend",
+      "label": "Draw / EEVEE",
+      "sublabel": "DRW_draw_view",
+      "stage": 4,
+      "row": 0,
+      "tag": "视口"
+    },
+    {
+      "id": "cycles",
+      "type": "external",
+      "label": "Cycles",
+      "sublabel": "RE_engine_render",
+      "stage": 4,
+      "row": 2,
+      "tag": "F12"
+    }
+  ],
+  "flows": [
+    {
+      "id": "panel-rna",
+      "from": "panel",
+      "to": "rna",
+      "label": "layout.prop",
+      "classification": "属性链",
+      "variant": "emphasis"
+    },
+    {
+      "id": "key-op",
+      "from": "keymap",
+      "to": "operator",
+      "label": "keymap event",
+      "classification": "命令链",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rna-mesh",
+      "from": "rna",
+      "to": "mesh",
+      "label": "写 DNA 字段",
+      "classification": "同一份 ID"
+    },
+    {
+      "id": "op-mesh",
+      "from": "operator",
+      "to": "mesh",
+      "label": "MESH_OT_*",
+      "classification": "编辑写回",
+      "variant": "emphasis"
+    },
+    {
+      "id": "mesh-deg",
+      "from": "mesh",
+      "to": "depsgraph",
+      "label": "tag + notifier",
+      "classification": "DEG_id_tag_update",
+      "variant": "emphasis"
+    },
+    {
+      "id": "deg-draw",
+      "from": "depsgraph",
+      "to": "draw",
+      "label": "DAG_EVAL_VIEWPORT",
+      "classification": "视口求值",
+      "variant": "emphasis"
+    },
+    {
+      "id": "deg-cycles",
+      "from": "depsgraph",
+      "to": "cycles",
+      "label": "DAG_EVAL_RENDER",
+      "classification": "离线求值",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "写入只有两条链",
+      "items": [
+        "面板用 layout.prop 走 RNA；layout.operator 与快捷键一样进 WM Operator",
+        "图上只画两条写入主路，避免同一走廊叠两条命令边"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "同一份网格",
+      "items": [
+        "编辑模式真相在 MeshRuntime.edit_mesh 的 BMesh",
+        "写回后 DEG_id_tag_update，notifier 只通知重绘"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "像素分道",
+      "items": [
+        "视口：DAG_EVAL_VIEWPORT + DRW_draw_view",
+        "F12：DAG_EVAL_RENDER + RE_engine_render，Cycles 吃求值网格"
+      ]
+    }
+  ]
+}

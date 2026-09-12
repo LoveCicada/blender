@@ -26,6 +26,9 @@
 | [site/c/index.html](site/c/index.html) | 建模：Mesh / BMesh / 编辑模式 / 修改器 |
 | [site/d/index.html](site/d/index.html) | 渲染：Depsgraph / Draw / EEVEE / Cycles |
 | [site/qa/index.html](site/qa/index.html) | 二百问答：模块 / 功能 / UI–数据 / 渲染 |
+| [archify/README.md](archify/README.md) | Archify 邻居图入口（非权威；目录仍是 catalog） |
+| [archify/blender-runtime.html](archify/blender-runtime.html) | 运行时架构：DNA / RNA / WM / BMesh / depsgraph / 像素分道 |
+| [archify/blender-mainpath.html](archify/blender-mainpath.html) | 主路径数据流：按钮或快捷键到视口 / F12 |
 
 ## 本 fork 的用途
 

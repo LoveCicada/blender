@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Blender 运行时邻居图",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ui-data",
+        "label": "UI 写入数据",
+        "focus": ["python-ui", "makesrna", "windowmanager", "blenkernel"],
+        "note": "面板走 RNA，快捷键走 WM Operator，最后写同一份 ID。"
+      },
+      {
+        "id": "edit-mesh",
+        "label": "编辑网格",
+        "focus": ["editors", "bmesh", "blenkernel"],
+        "note": "编辑模式改 BMesh，写回 DNA Mesh 再标脏。"
+      },
+      {
+        "id": "eval-pixels",
+        "label": "求值后分道",
+        "focus": ["depsgraph", "draw-eevee", "cycles"],
+        "note": "视口走 Draw/EEVEE，F12 走 render 调度后的 Cycles。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "python-ui",
+      "type": "frontend",
+      "label": "Python UI",
+      "sublabel": "bl_ui 面板 / 菜单",
+      "pos": [40, 80],
+      "size": [150, 64],
+      "tag": "只画不改点"
+    },
+    {
+      "id": "windowmanager",
+      "type": "backend",
+      "label": "Window Manager",
+      "sublabel": "WM_main",
+      "pos": [280, 80],
+      "size": [150, 64],
+      "tag": "Operator"
+    },
+    {
+      "id": "editors",
+      "type": "backend",
+      "label": "Editors",
+      "sublabel": "mesh / object / View3D",
+      "pos": [520, 80],
+      "size": [160, 64],
+      "tag": "exec / invoke"
+    },
+    {
+      "id": "bmesh",
+      "type": "backend",
+      "label": "BMesh",
+      "sublabel": "半边拓扑",
+      "pos": [760, 80],
+      "size": [150, 64],
+      "tag": "edit_mesh"
+    },
+    {
+      "id": "makesrna",
+      "type": "backend",
+      "label": "RNA",
+      "sublabel": "makesrna 反射",
+      "pos": [40, 280],
+      "size": [150, 64],
+      "tag": "属性名"
+    },
+    {
+      "id": "makesdna",
+      "type": "database",
+      "label": "DNA",
+      "sublabel": "makesdna / SDNA",
+      "pos": [40, 480],
+      "size": [150, 64],
+      "tag": ".blend 布局"
+    },
+    {
+      "id": "blenkernel",
+      "type": "database",
+      "label": "BKE / Main",
+      "sublabel": "ID · Mesh · Object",
+      "pos": [760, 280],
+      "size": [150, 64],
+      "tag": "运行时对象"
+    },
+    {
+      "id": "depsgraph",
+      "type": "backend",
+      "label": "Depsgraph",
+      "sublabel": "on_refresh / framechange",
+      "pos": [1000, 280],
+      "size": [170, 64],
+      "tag": "Copy-on-eval"
+    },
+    {
+      "id": "draw-eevee",
+      "type": "frontend",
+      "label": "Draw / EEVEE",
+      "sublabel": "DRW_draw_view",
+      "pos": [1000, 480],
+      "size": [170, 64],
+      "tag": "视口像素"
+    },
+    {
+      "id": "cycles",
+      "type": "external",
+      "label": "Cycles",
+      "sublabel": "intern/cycles",
+      "pos": [520, 480],
+      "size": [160, 64],
+      "tag": "F12 kernel"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "交互与命令",
+      "wraps": ["python-ui", "windowmanager", "editors"]
+    },
+    {
+      "kind": "region",
+      "label": "磁盘与运行时数据",
+      "wraps": ["makesdna", "makesrna", "bmesh", "blenkernel"]
+    },
+    {
+      "kind": "region",
+      "label": "求值与像素",
+      "wraps": ["depsgraph", "draw-eevee", "cycles"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "ui-prop",
+      "from": "python-ui",
+      "to": "makesrna",
+      "label": "layout.prop",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "ui-op",
+      "from": "python-ui",
+      "to": "windowmanager",
+      "label": "layout.operator"
+    },
+    {
+      "id": "sdna-bind",
+      "from": "makesdna",
+      "to": "makesrna",
+      "label": "SDNA offset"
+    },
+    {
+      "id": "rna-write",
+      "from": "makesrna",
+      "to": "blenkernel",
+      "label": "写 DNA 字段"
+    },
+    {
+      "id": "dna-id",
+      "from": "makesdna",
+      "to": "blenkernel",
+      "label": "ID 布局"
+    },
+    {
+      "id": "wm-editors",
+      "from": "windowmanager",
+      "to": "editors",
+      "label": "invoke / exec",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edit-bmesh",
+      "from": "editors",
+      "to": "bmesh",
+      "label": "MESH_OT_*",
+      "variant": "emphasis"
+    },
+    {
+      "id": "bmesh-mesh",
+      "from": "bmesh",
+      "to": "blenkernel",
+      "label": "bm_to_me",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "tag-graph",
+      "from": "blenkernel",
+      "to": "depsgraph",
+      "label": "DEG_id_tag_update",
+      "variant": "emphasis"
+    },
+    {
+      "id": "viewport",
+      "from": "depsgraph",
+      "to": "draw-eevee",
+      "label": "DAG_EVAL_VIEWPORT",
+      "variant": "emphasis",
+      "labelDy": 24
+    },
+    {
+      "id": "offline",
+      "from": "depsgraph",
+      "to": "cycles",
+      "label": "DAG_EVAL_RENDER",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "同一份数据",
+      "items": [
+        "DNA 是磁盘布局，RNA 是对外名字，Python UI 不改顶点数组",
+        "快捷键和按钮都进 WM Operator，再进 editors"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "编辑与求值",
+      "items": [
+        "编辑模式真相在 MeshRuntime.edit_mesh 的 BMesh",
+        "修改器叠在 depsgraph 求值副本上，不是点按钮时算完"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "像素分道",
+      "items": [
+        "视口：DRW_draw_view + EEVEE/Workbench",
+        "F12：RE_engine_render，Cycles 只吃求值网格"
+      ]
+    }
+  ]
+}

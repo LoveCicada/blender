@@ -23,6 +23,7 @@
 | 深讲 · 建模 | [site/c/](site/c/index.html) | Mesh / BMesh / 编辑模式 / 修改器 |
 | 深讲 · 渲染 | [site/d/](site/d/index.html) | Depsgraph / Draw / EEVEE / Cycles |
 | 问答投影 | [site/qa/](site/qa/index.html) | Q001–200，链回目录或深讲 |
+| 邻居图（非权威） | [archify/](archify/README.md) | 运行时架构 + 主路径数据流；不另起目录条目 |
 
 显示名用中文（数据 / 建模 / 渲染）；目录文件夹仍是 `b/` `c/` `d/`。  
 「链 B：跑 Operator」表示属性链 vs 命令链，不是章节号。
@@ -35,6 +36,7 @@ modules / responsibilities / features / ui-data / render
 b/  c/  d/     ← 函数级走读
     ↑
 qa/            ← 问答，不另起目录
+archify/       ← 邻居图，不另起目录
 ```
 
 ## 已完成
@@ -68,6 +70,13 @@ qa/            ← 问答，不另起目录
 - [x] [qa/render.html](site/qa/render.html) Q151–200
 
 建模不单独成问答册：拓扑 / 挤出 / 修改器进**功能**，BMesh / editors 边界进**模块**。
+
+### Archify 邻居图
+
+- [x] [archify/README.md](archify/README.md) — 打开方式；catalog 仍是权威
+- [x] [blender-runtime.html](archify/blender-runtime.html) — architecture，showcase 9/9
+- [x] [blender-mainpath.html](archify/blender-mainpath.html) — dataflow：面板→RNA、快捷键→Operator，再汇到 Mesh/BMesh
+- [x] 学习站顶栏「Archify」→ `../archify/blender-runtime.html`
 
 ## 题库分配（已写）
 
