@@ -71,12 +71,43 @@
       </ol>
     </section>
     <section class="panel">
+      <h2>阶段 2 · 一次点击的完整旅程</h2>
+      <ol class="steps">
+        <li><a href="2-1.html">2.1 Operator 是命令</a>：注册表；poll / invoke / exec；调用、撤销、问 poll。</li>
+        <li><a href="2-2.html">2.2 属性链</a>：拖滑条和 bpy 赋值是同一入口。</li>
+        <li><a href="2-3.html">2.3 标脏与通知</a>：两类听众；「按 E 挤出」完整链验收。</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>阶段 3 · 建模核心</h2>
+      <ol class="steps">
+        <li><a href="3-1.html">3.1 两种网格表示</a>：数组 Mesh vs 指针网 BMesh，各适合什么。</li>
+        <li><a href="3-2.html">3.2 亲手玩 BMesh</a>：王牌实验——从空造一个立方体。</li>
+        <li><a href="3-3.html">3.3 编辑模式的进出</a>：Tab 是一次格式转换；编辑态里 DNA 不变。</li>
+        <li><a href="3-4.html">3.4 挤出与 BMO</a>：两张操作符表；脚本造棱台挤顶面（验收）。</li>
+        <li><a href="3-5.html">3.5 修改器</a>：参数进 DNA，变形在求值。</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>阶段 4 · 求值与分身</h2>
+      <ol class="steps">
+        <li><a href="4-1.html">4.1 depsgraph 与求值副本</a>：原始 ID 不动，求值写副本。</li>
+        <li><a href="4-2.html">4.2 两张图</a>：视口图 vs 渲染图，建图时定模式。</li>
+      </ol>
+    </section>
+    <section class="panel">
+      <h2>阶段 5 · 渲染分道</h2>
+      <ol class="steps">
+        <li><a href="5-1.html">5.1 视口一帧</a>：Draw Manager 假定图已求过；overlay 不是引擎。</li>
+        <li><a href="5-2.html">5.2 EEVEE 与 GPU 材质</a>：材质预览常走 EEVEE；节点编译成 GPU 材质。</li>
+        <li><a href="5-3.html">5.3 F12 链</a>：RENDER_OT_render → RE_RenderFrame → RE_engine_render。</li>
+        <li><a href="5-4.html">5.4 Cycles 接入</a>：从 depsgraph 同步，不读编辑态 BMesh。</li>
+        <li><a href="5-5.html">5.5 颜色管理入门</a>：线性到显示器之间的视图变换。</li>
+      </ol>
+    </section>
+    <section class="panel">
       <h2>后续阶段（未开）</h2>
       <ul>
-        <li><strong>阶段 2 · 一次点击的旅程</strong>：Operator；属性链；标脏与通知。</li>
-        <li><strong>阶段 3 · 建模核心</strong>：Mesh vs BMesh；bmesh 模块实验；编辑模式；挤出与 BMO；修改器。</li>
-        <li><strong>阶段 4 · 求值与分身</strong>：depsgraph 与 COW；视口图 vs 渲染图。</li>
-        <li><strong>阶段 5 · 渲染分道</strong>：视口一帧；EEVEE；F12 链；Cycles；颜色管理。</li>
         <li><strong>阶段 6 · 自选专题</strong>：几何节点 / 合成 / 雕刻 / UV，按兴趣开。</li>
       </ul>
     </section>

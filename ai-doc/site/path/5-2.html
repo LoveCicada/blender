@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5.2 EEVEE 与 GPU 材质 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 5 · 渲染分道 · 第 2 课</p>
+      <h1>5.2 EEVEE 与 GPU 材质</h1>
+      <p class="lede">材质预览几乎总是 EEVEE 在画——哪怕你的渲染引擎选了 Cycles。材质节点树在 EEVEE 里被编译成 <strong>GPU 材质</strong>（GLSL），同一份节点语义，另一套机器码。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="5-1.html">5.1 视口一帧</a>
+      <a href="5-2.html" class="is-active">5.2 EEVEE</a>
+      <a href="5-3.html">5.3 F12 链</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出材质预览为什么常走 EEVEE（哪个标志、哪行代码）。</li>
+        <li>说出节点树 → GPU 材质的编译入口。</li>
+        <li>用 bpy 建材质、加 Principled 节点，在材质预览里看到它。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：一套节点，两套后端</h2>
+      <p>你在着色器编辑器里搭的节点树是<strong>语义</strong>：「基础色乘纹理，进 Principled 的 Base Color」。谁来执行这份语义？</p>
+      <ul>
+        <li><strong>EEVEE</strong>（视口 / F12 都可以）：把节点树编译成 GPU shader（GLSL compute / fragment），在显卡上跑。编译入口是 GPU 层的 <code>GPU_material_from_nodetree</code>。</li>
+        <li><strong>Cycles</strong>（5.4）：把同一棵树翻译成自己的 shader 闭包，在 CPU/GPU 上路径追踪。两套机器码，一份节点语义。</li>
+      </ul>
+      <p>材质预览模式（Z → Material）需要一个能实时编译节点树的引擎——这正是 EEVEE 的本职。所以即使场景渲染引擎是 Cycles，材质预览默认仍由 EEVEE 代画（引擎声明 <code>RE_USE_EEVEE_VIEWPORT</code> 时）。</p>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：EEVEE 的注册与材质编译</h2>
+      <ul>
+        <li>EEVEE 引擎注册：<code>draw/engines/eevee/eevee_engine.cc:86</code>，idname 是 <code>"BLENDER_EEVEE"</code>（5.x 里 EEVEE Next 已扶正为这个 id）。</li>
+        <li>材质预览分叉：<code>view3d_draw.cc:1634</code>——<code>OB_MATERIAL</code> 模式且引擎带 <code>RE_USE_EEVEE_VIEWPORT</code>，就换成 <code>RE_engine_id_BLENDER_EEVEE</code>（:1635）。</li>
+        <li>节点 → GPU 材质：<code>gpu/intern/gpu_material.cc:134</code> 的 <code>GPU_material_from_nodetree</code>；EEVEE 侧调用点在 <code>eevee_shader.cc:1574</code>。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：bpy 建材质</h2>
+      <p>选中立方体，控制台逐段执行：</p>
+      <pre class="src">import bpy
+mat = bpy.data.materials.new("M")
+mat.use_nodes = True
+nt = mat.node_tree
+bsdf = nt.nodes["Principled BSDF"]     # use_nodes 自动带的主节点
+bsdf.inputs["Base Color"].default_value = (0.8, 0.2, 0.1, 1.0)
+bpy.context.object.data.materials.append(mat)
+# 预期：3D 视图切到 Material 预览（Z 菜单）后，立方体变成橙红色</pre>
+      <pre class="src">[n.name for n in nt.nodes]
+# 预期：['Principled BSDF', 'Material Output'] —— 默认两节点
+[(l.from_node.name, l.to_node.name) for l in nt.links]
+# 预期：[('Principled BSDF', 'Material Output')] —— 一条链接</pre>
+      <p>你看到的颜色 = 节点树经 <code>GPU_material_from_nodetree</code> 编译成 GPU 材质后由 EEVEE 画出。改 <code>default_value</code> 再观察：颜色即时变——节点改动触发标脏，GPU 材质缓存失效重编译。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/render.html#q173">Q173</a>：EEVEE 从哪取场景？</li>
+        <li><a href="../qa/render.html#q174">Q174</a>：节点怎样变成 GPU shader？</li>
+        <li><a href="../qa/render.html#q177">Q177</a>：RE_USE_EEVEE_VIEWPORT 影响谁？</li>
+        <li><a href="../qa/render.html#q179">Q179</a>：同一材质在 Workbench 和 EEVEE 下为何颜色不同？</li>
+        <li><a href="../qa/render.html#q181">Q181</a>：GPU 材质缓存何时失效？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../d/eevee.html">深讲 · EEVEE</a>：引擎内部管线。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="5-3.html">5.3 F12 链</a></footer>
+</body>
+</html>

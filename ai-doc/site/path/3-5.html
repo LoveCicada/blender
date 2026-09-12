@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3.5 修改器 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 3 · 建模核心 · 第 5 课</p>
+      <h1>3.5 修改器</h1>
+      <p class="lede"><a href="../glossary.html#modifier">修改器</a>是挂在物体上的变形流水线：你存盘的只有<strong>参数</strong>（DNA），真正的变形发生在求值时，打在原始网格的<a href="../glossary.html#evaluated">副本</a>上。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="3-4.html">3.4 挤出与 BMO</a>
+      <a href="3-5.html" class="is-active">3.5 修改器</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出「参数进 DNA、变形在求值」各落在哪个文件。</li>
+        <li>用 <code>evaluated_get</code> 演示：原始网格和求值副本的顶点数不同。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：存参数，算副本</h2>
+      <p>加一个细分（Subsurf）修改器，网格没有立刻变密——因为修改器只做两件事：</p>
+      <ul>
+        <li><strong>参数存进 DNA</strong>：级别、类型等字段在 <code>SubsurfModifierData</code> 里，随 .blend 存盘。这就是为什么重开文件修改器还在。</li>
+        <li><strong>变形留给求值</strong>：depsgraph 求值时（2.3 标脏的下游），把原始网格复制一份，在副本上跑修改器的 <code>modify_mesh</code>。原始网格从头到尾不动。</li>
+      </ul>
+      <p>这个设计一次解释三个日常现象：加修改器那一刻网格不变密；视口级别和渲染级别可以不同（求值时按场景各算各的）；Apply 按钮才是「把求值结果写回 DNA」的显式操作。</p>
+      <figure class="figure">
+        <pre class="mermaid">flowchart LR
+  dna["SubsurfModifierData<br>（DNA：levels=2）"] --> eval["求值：mesh_calc_modifiers"]
+  orig["原始 Mesh（8 顶点）"] --> eval
+  eval --> copy["求值副本 Mesh<br>（顶点数暴涨）"]
+  copy --> view["视口 / 渲染"]</pre>
+        <figcaption>原始数据不动，变形打在副本上。阶段 4 会讲这张求值图本身。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：Subsurf 的两半</h2>
+      <p>类型登记在 <code>modifiers/intern/MOD_subsurf.cc:446</code> 的 <code>modifierType_Subsurf</code>：</p>
+      <pre class="src">/*struct_name*/ "SubsurfModifierData"   /* :449 参数结构，是 DNA，随文件存盘 */
+/*type*/ ModifierTypeType::Constructive   /* :452 构造类：会增删几何 */
+/*modify_mesh*/ modify_mesh               /* :464 变形入口：求值时被调 */</pre>
+      <p>求值侧：<code>blenkernel/intern/mesh_data_update.cc:280</code> 的 <code>mesh_calc_modifiers</code>——depsgraph 求值一个网格物体时，在这里依次跑修改器栈（调用点如 :947）。「改参数 → 标脏 → 求值重跑」就是 2.2 + 2.3 的链再走一遍。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：原始 8 顶点，副本暴涨</h2>
+      <p>选中立方体，控制台逐段执行：</p>
+      <pre class="src">import bpy
+ob = bpy.context.object
+mod = ob.modifiers.new("S", 'SUBSURF')
+mod.levels = 2
+len(ob.data.vertices)
+# 预期：8 —— 原始网格没动（参数进 DNA，变形在求值）</pre>
+      <pre class="src">dg = bpy.context.evaluated_depsgraph_get()
+ev = ob.evaluated_get(dg)
+len(ev.data.vertices)
+# 预期：远大于 8 —— 细分结果只存在于求值副本</pre>
+      <pre class="src">mod.show_viewport = False
+bpy.context.view_layer.update()      # 让标脏结算一次
+dg = bpy.context.evaluated_depsgraph_get()
+len(ob.evaluated_get(dg).data.vertices)
+# 预期：回到 8 —— 视口级别关掉，副本就是原样</pre>
+      <p>三段连起来就是本课标题的全部含义：参数（DNA）→ 求值（depsgraph）→ 副本（渲染/视口用）。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检（含阶段 3 总验收）</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q016">Q016</a>：modifiers 模块算的是原网格还是副本？</li>
+        <li><a href="../qa/features.html#q077">Q077</a>：添加细分修改器时为什么网格没有立刻变密？</li>
+        <li><a href="../qa/features.html#q078">Q078</a>：视口细分级别和渲染级别为什么能不同？</li>
+        <li><a href="../qa/features.html#q079">Q079</a>：Apply 修改器是什么功能，编辑模式为何不能 Apply？</li>
+        <li><a href="../qa/features.html#q085">Q085</a>：为什么移动修改器参数视口会刷新，却没有「运行修改器 Operator」？</li>
+        <li>阶段 3 总验收：独立完成 <a href="3-4.html">3.4 的棱台脚本</a>；合上笔记答「为什么编辑模式不直接改 DNA」「修改器为什么在求值时跑而不是点按钮时跑」。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../c/modifiers.html">深讲 · 修改器</a>：类型表与求值接入的完整走读。</li>
+        <li><a href="../d/depsgraph.html">深讲 · Depsgraph</a>：阶段 4 预告——副本是谁管、怎么算。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一阶段：求值与分身（未开）</footer>
+</body>
+</html>

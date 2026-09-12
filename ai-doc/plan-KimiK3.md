@@ -158,8 +158,8 @@ flowchart LR
 | 词汇表 | [site/glossary.html](site/glossary.html) | 已写（阶段 0–1 用词） |
 | 0.1 工具就位 | [site/path/0-1.html](site/path/0-1.html) | 已写 |
 | 1.1–1.4 数据地基 | [site/path/1-1.html](site/path/1-1.html) 起四课 | 已写 |
-| 2.1–2.3 一次点击 | `site/path/2-*.html` | 未开 |
-| 3.1–3.5 建模核心 | `site/path/3-*.html` | 未开 |
-| 4.1–4.2 求值 | `site/path/4-*.html` | 未开 |
-| 5.1–5.5 渲染分道 | `site/path/5-*.html` | 未开 |
-| 首页改路径优先 | `site/index.html` | 未开 |
+| 2.1–2.3 一次点击 | [site/path/2-1.html](site/path/2-1.html) 起三课 | 已写 |
+| 3.1–3.5 建模核心 | [site/path/3-1.html](site/path/3-1.html) 起五课 | 已写 |
+| 4.1–4.2 求值 | [site/path/4-1.html](site/path/4-1.html) 起两课 | 已写 |
+| 5.1–5.5 渲染分道 | [site/path/5-1.html](site/path/5-1.html) 起五课 | 已写 |
+| 首页改路径优先 | [site/index.html](site/index.html) | 已写 |

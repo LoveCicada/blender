@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3.4 挤出与 BMO · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 3 · 建模核心 · 第 4 课</p>
+      <h1>3.4 挤出与 BMO</h1>
+      <p class="lede">Blender 有<strong>两张</strong>操作符表：2.1 的 WM 表管「用户命令」（上下文、撤销、界面），<a href="../glossary.html#bmo">BMO</a> 表管「几何算法」（输入一槽几何，输出一槽几何）。挤出把两张表串了起来。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="3-3.html">3.3 编辑模式</a>
+      <a href="3-4.html" class="is-active">3.4 挤出与 BMO</a>
+      <a href="3-5.html">3.5 修改器</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出 WM Operator 与 BMO 是两层表，各自管什么。</li>
+        <li>亲手用 <code>bmesh.ops.extrude_face_region</code> 挤出——绕开 WM 层直调几何算法。</li>
+        <li>阶段验收实验：脚本造棱台并挤出顶面。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：两层表，各管一段</h2>
+      <p>按 E 挤出时（2.3 的链），WM 层负责「谁的上下文、怎么开始、撤销怎么记」；真正造几何的是 BMO 层的 <code>extrude_face_region</code>。分层的好处：</p>
+      <ul>
+        <li>同一个 BMO 既能被 C 操作符调，也能被 Python <code>bmesh.ops</code> 调——你的脚本能复刻任何编辑工具的核心算法。</li>
+        <li>BMO 不关心界面：输入输出都是「一槽几何元素」（geom in / geom out），可以纯数据测试。</li>
+        <li>WM 操作符可以组合多个 BMO（挤出 + 移动 = 两个表各出一份力）。</li>
+      </ul>
+      <figure class="figure">
+        <pre class="mermaid">flowchart TB
+  subgraph wm["WM 表（editors/）：用户命令"]
+    op["MESH_OT_extrude_region<br>poll / exec / 撤销"]
+  end
+  subgraph bmo["BMO 表（bmesh/）：几何算法"]
+    alg["extrude_face_region<br>geom 进 → geom 出"]
+  end
+  py["bmesh.ops.extrude_face_region<br>（Python 直调）"] --> alg
+  op --> alg</pre>
+        <figcaption>两层表的汇合点：C 操作符和 Python 脚本调的是同一个 BMO。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：一个字符串名，三个调用处</h2>
+      <p>WM 侧：<code>edbm_extrude_ex</code>（<code>editors/mesh/editmesh_extrude.cc:212</code>）里 <code>BMO_op_init(bm, &amp;extop, BMO_FLAG_DEFAULTS, "extrude_face_region")</code>（:231）——按字符串名点算法。</p>
+      <p>BMO 表侧：<code>bmesh/intern/bmesh_opdefines.cc:1463</code> 的 <code>bmo_extrude_face_region_def</code>：opname 正是 <code>"extrude_face_region"</code>（:1464），exec 是 <code>bmo_extrude_face_region_exec</code>（:1491），登记进总表在 :3030。</p>
+      <p>Python 侧：<code>bmesh.ops.extrude_face_region</code> 汇到 <code>python/bmesh/bmesh_py_ops_call.cc:791</code> 的同一个 <code>BMO_op_init</code>。三个调用处，一张表。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：脚本挤出</h2>
+      <p>控制台逐段执行：</p>
+      <pre class="src">import bpy, bmesh
+bm = bmesh.new()
+bmesh.ops.create_cube(bm, size=2.0)
+bm.faces.ensure_lookup_table()
+
+res = bmesh.ops.extrude_face_region(bm, geom=[bm.faces[0]])
+# 新几何在 res["geom"] 里；把新顶点拉高
+for v in res["geom"]:
+    if isinstance(v, bmesh.types.BMVert):
+        v.co.z += 1.0
+
+me = bpy.data.meshes.new("Ext")
+bm.to_mesh(me); bm.free()
+ob = bpy.data.objects.new("Ext", me)
+bpy.context.collection.objects.link(ob)
+# 预期：一个面被挤出并拉高 1 的立方体</pre>
+      <p>对照 2.3 的链：你刚才手动执行了它的第 3 环（BMO），跳过了按键、poll、宏和撤销——这正是两层表的意义。</p>
+    </section>
+
+    <section class="panel">
+      <h2>阶段 3 验收（实验）：造棱台，挤顶面</h2>
+      <p>不看上面，独立写完这段（允许查 <code>bmesh.ops</code> 的参数名）：</p>
+      <pre class="src">import bpy, bmesh
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, segments=4,
+                      radius1=1.2, radius2=0.4, depth=1.5)
+# radius2=0 就是尖顶棱锥；留个小顶面好挤
+
+top = max(bm.faces, key=lambda f: f.calc_center_median().z)  # 找顶面
+res = bmesh.ops.extrude_face_region(bm, geom=[top])
+for v in res["geom"]:
+    if isinstance(v, bmesh.types.BMVert):
+        v.co.z += 0.6
+
+me = bpy.data.meshes.new("Pyramid")
+bm.to_mesh(me); bm.free()
+ob = bpy.data.objects.new("Pyramid", me)
+bpy.context.collection.objects.link(ob)
+# 预期：四棱台，顶面又向上挤出一截</pre>
+      <p>过关标准：能解释每一步用了哪张表、数据此刻是 BMesh 还是 DNA。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/features.html#q064">Q064</a>：挤出（E）实际调用了什么？</li>
+        <li><a href="../qa/features.html#q067">Q067</a>：细分（W / Ctrl+1 等）为什么有的不走 BMO 表？</li>
+        <li><a href="../qa/modules.html#q020">Q020</a>：BMO 表在哪个模块，为什么不放在 editors/mesh？</li>
+        <li>合上笔记：WM 表和 BMO 表各管什么？为什么挤出要两层都过？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../c/ops.html">深讲 · 建模操作符</a>：更多 WM→BMO 的对照。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="3-5.html">3.5 修改器</a></footer>
+</body>
+</html>

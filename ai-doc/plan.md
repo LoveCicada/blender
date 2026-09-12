@@ -97,7 +97,12 @@ archify/       ← 邻居图，不另起目录
 
 - [x] [site/path/index.html](site/path/index.html) 阶段索引 + [site/glossary.html](site/glossary.html) 词汇表
 - [x] 阶段 0–1 课页：`path/0-1.html`、`path/1-1.html` 至 `1-4.html`；顶栏全站加「路径」入口
-- [ ] 阶段 2–5 课页；首页改路径优先（执行前逐批确认）
+- [x] 阶段 2 课页：`path/2-1.html` 至 `2-3.html`（Operator / 属性链 / 标脏与通知 + 按 E 挤出验收链）
+- [x] 阶段 3 课页：`path/3-1.html` 至 `3-5.html`（两种表示 / bmesh 实验 / 编辑模式 / 挤出与 BMO / 修改器）
+- [x] 阶段 4 课页：`path/4-1.html`、`4-2.html`（求值副本 / 两张图）
+- [x] 阶段 5 课页：`path/5-1.html` 至 `5-5.html`（视口一帧 / EEVEE / F12 链 / Cycles / 颜色管理）
+- [x] 首页改路径优先：`site/index.html` 首屏为阶段路线，旧内容收进参考区
+- [ ] 阶段 6 自选专题（按兴趣再开）
 
 
 

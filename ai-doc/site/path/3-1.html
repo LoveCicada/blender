@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3.1 两种网格表示 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 3 · 建模核心 · 第 1 课</p>
+      <h1>3.1 两种网格表示</h1>
+      <p class="lede">同一份几何有两副面孔：存盘和求值用<strong>数组 Mesh</strong>（按下标访问），编辑操作用<strong>指针网 <a href="../glossary.html#bmesh">BMesh</a></strong>（按邻接跳转）。这节课弄清谁适合什么。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="2-3.html">2.3 标脏与通知</a>
+      <a href="3-1.html" class="is-active">3.1 两种表示</a>
+      <a href="3-2.html">3.2 玩 BMesh</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出数组 Mesh 与 BMesh 各自的强项：为什么一份几何要两种表示。</li>
+        <li>在控制台里对同一块立方体，分别用两种表示回答「邻接」问题。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：数组答不动「这个面的邻面」</h2>
+      <p>1.2 说过 Mesh 是 DNA——磁盘布局。它的几何是三摞<strong>平面数组</strong>：顶点数组、边数组、面（面角）数组，全靠下标。面只知道「我的顶点是 0、1、2、3 号」，边只知道「我连着 v1、v2」。紧凑、好序列化、好喂给 GPU——存盘、求值、渲染都爱它。</p>
+      <p>但编辑操作问的是另一类问题：「这条边连着哪些面？」「这个顶点的所有邻边？」「这个面的邻面？」数组只能全表扫描。BMesh 把同样几类元素做成<strong>指针互连的网</strong>：每个顶点带着一条出发边的指针，每条边带着两端点和面环指针，每个面带着 loop 环。邻接问题按度数跳转就答完，不用扫表。代价：指针不存盘、占内存、要维护一致性——所以只活在编辑态。</p>
+      <p>关键角色 <a href="../glossary.html#half-edge">BMLoop（半边 / 面角）</a>：一个顶点<strong>在一个面里</strong>的席位。同一条边两侧的面，通过各自 loop 的 radial 环互相找到——「边的邻面」就是这么答的。</p>
+      <figure class="figure">
+        <pre class="mermaid">flowchart LR
+  subgraph arr["数组 Mesh（DNA，存盘/求值）"]
+    va["顶点数组 0..7"] --- ea["边数组 0..11"] --- fa["面数组 0..5"]
+  end
+  subgraph net["指针网 BMesh（编辑态）"]
+    v["BMVert<br>e →"] --- e["BMEdge<br>v1 v2, l →"] --- l["BMLoop 环<br>v e f"] --- f["BMFace<br>l_first"]
+  end
+  arr <-."Tab 进出时互相转换（3.3）".-> net</pre>
+        <figcaption>左边按下标，右边按指针。转换是格式转换，不是两份数据各改各的。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：两种表示的结构定义</h2>
+      <p>数组侧：<code>DNA_mesh_types.h</code> 的 <code>struct Mesh</code>（:147），几何规模就是四个计数——<code>verts_num</code>（:168）、<code>edges_num</code>（:170）、<code>faces_num</code>（:172）、<code>corners_num</code>（:174）。</p>
+      <p>指针网侧：<code>source/blender/bmesh/bmesh_class.hh</code>：</p>
+      <pre class="src">struct BMVert { ... float co[3];  /* :94，坐标 :97 */
+                BMEdge *e; }        /* :107 任一邻边，disk cycle 的起点 */
+struct BMEdge { ... BMVert *v1, *v2;/* :124，端点 :135 */
+                BMLoop *l; }        /* :141 绕边的面环（radial） */
+struct BMLoop { ... BMVert *v;      /* :158，这个角用哪个顶点 :165 */
+                BMEdge *e; BMFace *f; } /* :177 / :184 */
+struct BMFace { ... BMLoop *l_first;/* :277，loop 环入口 :285 */
+                int len; }          /* :291 几个角 */</pre>
+      <p>注意 BMVert 只存「一条」邻边（<code>e</code>），其余邻边靠 disk cycle 环着找——指针网的设计处处是「存一个入口，跳转答全部」。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：同一块立方体，两种问法</h2>
+      <p>默认场景选中立方体，控制台逐段执行：</p>
+      <pre class="src">import bpy, bmesh
+me = bpy.context.object.data
+len(me.vertices), len(me.edges), len(me.polygons)
+# 预期：(8, 12, 6) —— 数组表示：三个数描述完规模
+
+me.polygons[0].vertices[:]
+# 预期：[0, 1, 2, 3] 一类 —— 面只存顶点下标，邻接要自己算</pre>
+      <pre class="src">bm = bmesh.new()
+bm.from_mesh(me)                  # DNA → BMesh（转换初体验）
+bm.verts.ensure_lookup_table()
+v = bm.verts[0]
+[e.index for e in v.link_edges]   # 顶点的邻边，直接问
+# 预期：[0, 3, 4] 一类 —— 不用扫全表
+
+bm.faces.ensure_lookup_table()
+[l.vert.index for l in bm.faces[0].loops]  # 面的 loop 环
+# 预期：四个顶点下标，按顺序
+bm.free()</pre>
+      <p>对照体会：数组那边「面 → 顶点下标」是一步，「顶点 → 邻边」要写循环扫 12 条边；指针网这边两个方向都是一步跳转。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q013">Q013</a>：bmesh 模块和 Mesh DNA 为什么要并存？</li>
+        <li><a href="../qa/modules.html#q014">Q014</a>：谁拥有 BMEditMesh，bmesh 还是 blenkernel？</li>
+        <li><a href="../qa/features.html#q063">Q063</a>：点选一个顶点，改的是 DNA 吗？</li>
+        <li>合上笔记：「这个面的邻面有哪些」——两种表示各自怎么答？代价各是什么？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../c/mesh-bmesh.html">深讲 · Mesh / BMesh</a>：两种表示的完整对照与转换细节。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="3-2.html">3.2 亲手玩 BMesh</a></footer>
+</body>
+</html>

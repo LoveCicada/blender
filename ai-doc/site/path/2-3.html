@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2.3 标脏与通知 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 2 · 一次点击的完整旅程 · 第 3 课</p>
+      <h1>2.3 标脏与通知</h1>
+      <p class="lede">改了一个字段，有两类听众要知道：求值器（<a href="../glossary.html#tag">标脏</a>，重算依赖）和界面（<a href="../glossary.html#notifier">通知</a>，重画区域）。两个通道各管各——所以「改了数据 ≠ 立刻重算重画」。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="2-1.html">2.1 Operator</a>
+      <a href="2-2.html">2.2 属性链</a>
+      <a href="2-3.html" class="is-active">2.3 标脏与通知</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出 <code>DEG_id_tag_update</code> 与 <code>WM_main_add_notifier</code> 各通知谁。</li>
+        <li>用实验看到：赋值那一瞬间不重算也不重画，重算发生在事件循环的空档。</li>
+        <li>阶段验收：完整复述「按 E 挤出」从按键到重画的链。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：两类听众，两条通道</h2>
+      <p>你在编辑模式挤出一个面，数据变了。谁需要知道？</p>
+      <ul>
+        <li><strong>求值器（depsgraph）</strong>：派生数据要重算——法线、细分结果、修改器输出。给它的话叫<strong>标脏</strong>（tag）：在 ID 上打 <code>ID_RECALC_*</code> 标志，意思是「这份数据脏了，轮到求值时重算」。标脏本身不算任何东西。</li>
+        <li><strong>界面</strong>：3D 视图、属性面板、大纲要重画。给它们的话叫<strong>通知</strong>（notifier）：一条 <code>NC_* | ND_*</code> 编码的消息，订阅了这类消息的区域下次重画。</li>
+      </ul>
+      <p>关键：两条通道都只是「捎话」。真正的重算和重画发生在事件循环的空档，不是赋值那一瞬。这就是为什么脚本里连改一百次，界面只跳到最后的结果。</p>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：两行并排的标准动作</h2>
+      <p>最干净的教学例子是编辑模式网格改完后的收尾函数 <code>EDBM_update</code>（<code>editors/mesh/editmesh_utils.cc:1791</code>），开头两行就是两条通道：</p>
+      <pre class="src">DEG_id_tag_update(&amp;mesh-&gt;id, ID_RECALC_GEOMETRY);   /* :1795 告诉求值器：几何脏了 */
+WM_main_add_notifier(NC_GEOM | ND_DATA, &amp;mesh-&gt;id);  /* :1796 告诉界面：网格数据变了 */</pre>
+      <ul>
+        <li><code>DEG_id_tag_update</code>：声明在 <code>depsgraph/DEG_depsgraph.hh:123</code>，实现在 <code>depsgraph/intern/depsgraph_tag.cc:844</code>。</li>
+        <li><code>WM_main_add_notifier</code>：实现在 <code>windowmanager/intern/wm_event_system.cc:403</code>。</li>
+        <li>消息编码：<code>NC_GEOM</code> = <code>(17 &lt;&lt; 24)</code>（<code>WM_types.hh:406</code>），<code>ND_DATA</code> = <code>(91 &lt;&lt; 16)</code>（:551）。NC 是大类，ND 是细分。</li>
+      </ul>
+      <p>复习 2.2：<code>rna_Object_internal_update</code>（<code>rna_object.cc:354</code>）是同一模式的单人版——属性的 update 回调里只做标脏。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：重画不在赋值瞬间</h2>
+      <p>控制台里逐行执行：</p>
+      <pre class="src">import bpy
+ob = bpy.context.object
+ob.location.x = 3.0
+# 预期：立刻动了 —— 控制台每条命令之间，事件循环有空档处理通知</pre>
+      <p>换成在<strong>文本编辑器</strong>里整段运行（Scripting 工作区 → 新建脚本 → Run Script）：</p>
+      <pre class="src">import bpy
+ob = bpy.context.object
+for i in range(50):
+    ob.location.x = i * 0.2
+# 预期：物体直接跳到终点，中间不画 —— 重画在事件循环，不在赋值瞬间</pre>
+      <pre class="src">ob.update_tag()                  # 手动标脏（bpy 入口在 rna_ID.cc:2756）
+bpy.context.view_layer.update()  # 不等事件循环，强制立刻求值一次
+# 预期：无报错 —— 这就是「标脏 → 求值」两条指令的手动版</pre>
+    </section>
+
+    <section class="panel">
+      <h2>阶段 2 验收：按 E 挤出的完整链</h2>
+      <figure class="figure">
+        <pre class="mermaid">sequenceDiagram
+  participant K as 键位映射
+  participant P as Python 操作符
+  participant M as 宏操作符
+  participant E as 挤出 exec
+  participant U as EDBM_update
+  participant D as depsgraph / 界面
+  K->>P: E 键 → view3d.edit_mesh_extrude_move_normal
+  P->>M: bpy.ops.mesh.extrude_region_move
+  M->>E: MESH_OT_extrude_region 的 exec
+  E->>U: 几何改完，收尾
+  U->>D: DEG_id_tag_update + WM_main_add_notifier
+  D->>D: 事件循环空档：重算 + 重画</pre>
+        <figcaption>每一环都有 file:line，合上笔记应能复述。</figcaption>
+      </figure>
+      <ol class="steps">
+        <li><strong>按键</strong>：事件系统查<a href="../glossary.html#keymap">键位映射</a>，E → <code>view3d.edit_mesh_extrude_move_normal</code>（<code>blender_default.py:5650</code>）。分发在 <code>wm_event_system.cc</code>：<code>wm_handlers_do</code>（:3701）→ <code>wm_handler_operator_call</code>（:2658）→ <code>wm_operator_invoke</code>（:1640）。</li>
+        <li><strong>Python 操作符</strong>（<code>view3d.py:86</code>）：poll 检查在网格编辑模式（:94），然后调 <code>bpy.ops.mesh.extrude_region_move</code>（:132）。</li>
+        <li><strong>宏</strong>（<code>mesh_ops.cc:265</code>）：先跑 <code>MESH_OT_extrude_region</code> 的 exec——<code>edbm_extrude_region_exec</code>（<code>editmesh_extrude.cc:430</code>）→ <code>edbm_extrude_ex</code>（:212）真正造几何；再进 <code>TRANSFORM_OT_translate</code> 的模态，跟着鼠标拖。</li>
+        <li><strong>收尾</strong>：<code>EDBM_update</code>（<code>editmesh_utils.cc:1791</code>）标脏 + 通知。</li>
+        <li><strong>空档</strong>：depsgraph 重算（阶段 4），各区域重画（阶段 5）。</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/ui-data.html#q140">Q140</a>：EDBM_update 在链 B 里扮演什么？</li>
+        <li><a href="../qa/ui-data.html#q141">Q141</a>：notifier 的 NC_GEOM | ND_DATA 是给谁的？</li>
+        <li><a href="../qa/ui-data.html#q143">Q143</a>：DEG_id_tag_update 之后谁真正求值？</li>
+        <li><a href="../qa/ui-data.html#q144">Q144</a>：为什么视口不轮询每个顶点？</li>
+        <li>合上笔记：不看上面的图，把五步链讲出来，每环说出至少一个符号。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../b/update.html">深讲 · 更新</a>：标脏与通知的完整分类。</li>
+        <li><a href="../d/depsgraph.html">深讲 · Depsgraph</a>：阶段 4 的预告——标脏之后谁算、怎么算。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一阶段：建模核心（未开）</footer>
+</body>
+</html>

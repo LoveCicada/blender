@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>2.1 Operator 是命令 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 2 · 一次点击的完整旅程 · 第 1 课</p>
+      <h1>2.1 Operator 是命令</h1>
+      <p class="lede">界面上的每个动作——点按钮、选菜单、按快捷键——最后都落到同一张注册表里的一个 <a href="../glossary.html#operator">操作符</a>。控制台里的 <code>bpy.ops.*</code> 就是这张表的 Python 视图。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="1-4.html">1.4 Main 与 Scene</a>
+      <a href="2-1.html" class="is-active">2.1 Operator</a>
+      <a href="2-2.html">2.2 属性链</a>
+      <a href="2-3.html">2.3 标脏与通知</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出操作符注册表是什么：idname 字符串 ↔ <code>wmOperatorType</code> 结构。</li>
+        <li>说出 <a href="../glossary.html#poll">poll / invoke / exec</a> 三个回调各管什么。</li>
+        <li>在控制台里调用一个操作符、撤销它、亲手问一次 poll。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：一张表，三个回调</h2>
+      <p>「添加立方体」菜单项、快捷键 Shift+A、脚本里的 <code>bpy.ops.mesh.primitive_cube_add()</code>——三个入口，同一个操作符。Blender 把每个用户命令登记进一张全局表：键是 idname 字符串（如 <code>"MESH_OT_primitive_cube_add"</code>），值是一个 <code>wmOperatorType</code> 结构，里面装着回调函数指针。最重要的三个：</p>
+      <ul>
+        <li><strong>poll</strong>：「现在能用吗？」返回 False 时菜单项变灰、快捷键像坏了一样。挤出操作符的 poll 要求当前在网格编辑模式。</li>
+        <li><strong>invoke</strong>：「怎么开始？」弹确认框？用默认值直接跑？还是进入<a href="../glossary.html#modal">模态</a>（跟着鼠标拖，直到确认）？</li>
+        <li><strong>exec</strong>：「真正干活。」不许碰界面和输入设备——所以脚本能安全地直接调 exec。</li>
+      </ul>
+      <p>两个补充：<a href="../glossary.html#macro-op">宏操作符</a>把几个操作符串成一条（撤销时也只是一条）；操作符不只能用 C++ 写，Python 也能注册——按 E 挤出时第一个接到命令的就是个 Python 操作符。</p>
+      <figure class="figure">
+        <pre class="mermaid">flowchart LR
+  ev["按键 / 点击 / bpy 调用"] --> poll{"poll 通过?"}
+  poll -- "否" --> grey["菜单变灰 / 快捷键无效"]
+  poll -- "是" --> invoke["invoke：怎么开始"]
+  invoke --> exec["exec：真正改数据"]
+  exec --> undo["推入撤销栈"]</pre>
+        <figcaption>一次操作符调用的主线。exec 之后自动推撤销栈（操作符带 OPTYPE_UNDO 标志时），所以撤销不用自己写。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：表和回调长什么样</h2>
+      <p>回调定义在 <code>source/blender/windowmanager/WM_types.hh:1100</code> 的 <code>struct wmOperatorType</code>：</p>
+      <pre class="src">exec   /* :1124 注释明说：不能用界面代码或输入设备状态 */
+invoke /* :1140 交互入口；模态操作符之后由 modal 接管 */
+modal  /* :1156 持续运行的操作符（如移动、环切）逐事件处理 */
+poll   /* :1164 验证当前上下文能不能执行 */</pre>
+      <p>注册与查找：<code>WM_operatortype_append</code>（<code>windowmanager/intern/wm_operator_type.cc:151</code>）把操作符挂进表；<code>WM_operatortype_find</code>（:78）按 idname 查。网格操作符集中在 <code>editors/mesh/mesh_ops.cc</code> 登记，例如 <code>MESH_OT_primitive_cube_add</code> 在 :49（定义在 <code>editmesh_add.cc:330</code>）。</p>
+      <p>宏的例子：<code>mesh_ops.cc:265</code> 用 <code>WM_operatortype_append_macro</code> 登记 <code>MESH_OT_extrude_region_move</code>——「挤出 + 移动」一条命令、一条撤销。Python 操作符的例子：<code>scripts/startup/bl_operators/view3d.py:86</code> 的 <code>VIEW3D_OT_edit_mesh_extrude_move_normal</code>，它的 poll（:94）检查 <code>context.mode == 'EDIT_MESH'</code>，然后调 <code>bpy.ops.mesh.extrude_region_move</code>（:132）。默认键位里 E 绑的正是它（<code>scripts/presets/keyconfig/keymap_data/blender_default.py:5650</code>）。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：调用、撤销、问 poll</h2>
+      <p>控制台（Scripting 工作区）里逐段执行：</p>
+      <pre class="src">import bpy
+bpy.ops.mesh.primitive_cube_add()
+len(bpy.data.objects)
+# 预期：比之前多 1
+
+bpy.ops.ed.undo()
+len(bpy.data.objects)
+# 预期：回到原数 —— 操作符自带撤销（ED_OT_undo 在 editors/undo/ed_undo.cc:806）</pre>
+      <pre class="src">bpy.ops.mesh.extrude_region_move.poll()
+# 物体模式预期：False —— poll 说「现在不行」
+
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.extrude_region_move.poll()
+# 预期：True
+bpy.ops.object.mode_set(mode='OBJECT')</pre>
+      <pre class="src">bpy.ops.mesh.primitive_cube_add.get_rna_type().properties.keys()
+# 预期：size / align / location / rotation / scale 等参数表
+# —— 操作符的参数也是 RNA 属性（1.3 的门面再次出现）</pre>
+      <p>界面印证：偏好设置 → Interface → 勾上 <strong>Python Tooltips</strong> 后，鼠标悬停任意菜单项，提示底部会写出对应的 <code>bpy.ops.*</code> 调用——界面自己承认背后是这张表。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/ui-data.html#q134">Q134</a>：MESH_OT_* 在哪里挂进表？</li>
+        <li><a href="../qa/ui-data.html#q135">Q135</a>：poll 失败为什么像「快捷键坏了」？</li>
+        <li><a href="../qa/ui-data.html#q136">Q136</a>：invoke / exec / modal 怎么选？</li>
+        <li><a href="../qa/ui-data.html#q142">Q142</a>：宏 Operator（挤出+移动）怎样保持一条撤销？</li>
+        <li>合上笔记：为什么同一个操作符既能被快捷键触发、又能被脚本调用？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../b/operator.html">深讲 · Operator / WM</a>：注册表、上下文、事件分发的完整走读。</li>
+        <li><a href="../catalog.html#windowmanager">目录 · windowmanager</a>：这张表所属的子系统。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="2-2.html">2.2 属性链</a></footer>
+</body>
+</html>

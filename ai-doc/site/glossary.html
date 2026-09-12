@@ -138,16 +138,105 @@
       <p class="later">首次使用：<a href="path/1-4.html">1.4 Main 与 Scene</a></p>
     </article>
 
-    <h2>后面阶段预告</h2>
+    <h2>操作符与事件</h2>
     <article id="operator" class="entry">
       <h2>Operator</h2>
-      <p>一次用户命令的封装：可撤销、可快捷键、可被 Python 点名（<code>bpy.ops.*</code>）。有 poll / invoke / exec 三个回调。阶段 2 的主角。</p>
-      <p class="later">首次使用：阶段 2（未开）；参考 <a href="b/operator.html">数据 · Operator / WM</a></p>
+      <p>一次用户命令的封装：可撤销、可快捷键、可被 Python 点名（<code>bpy.ops.*</code>）。登记在 WM 的全局表里，键是 idname 字符串，值是带 <a href="#poll">poll / invoke / exec</a> 回调的 <code>wmOperatorType</code>。</p>
+      <p class="later">首次使用：<a href="path/2-1.html">2.1 Operator 是命令</a></p>
     </article>
+    <article id="poll" class="entry">
+      <h2>poll / invoke / exec</h2>
+      <p>操作符的三个回调：poll 答「现在能用吗」（否则菜单变灰）；invoke 答「怎么开始」（弹窗 / 直接跑 / 进模态）；exec 真正干活，不许碰界面输入，所以脚本直接调它。</p>
+      <p class="later">首次使用：<a href="path/2-1.html">2.1 Operator 是命令</a></p>
+    </article>
+    <article id="modal" class="entry">
+      <h2>模态（modal）</h2>
+      <p>操作符的一种运行方式：invoke 之后不结束，持续接管鼠标键盘事件（如移动、环切），直到确认或取消。由 <code>modal</code> 回调逐事件处理。</p>
+      <p class="later">首次使用：<a href="path/2-1.html">2.1 Operator 是命令</a></p>
+    </article>
+    <article id="macro-op" class="entry">
+      <h2>宏操作符（macro）</h2>
+      <p>把几个操作符串成一条登记（如「挤出 + 移动」）。执行时依次跑，撤销时仍是一条记录。</p>
+      <p class="later">首次使用：<a href="path/2-1.html">2.1 Operator 是命令</a></p>
+    </article>
+    <article id="keymap" class="entry">
+      <h2>键位映射（keymap）</h2>
+      <p>「哪个键触发哪个操作符」的表，默认定义在 <code>scripts/presets/keyconfig/keymap_data/blender_default.py</code>。事件系统拿到按键先查它，再调对应操作符。</p>
+      <p class="later">首次使用：<a href="path/2-1.html">2.1 Operator 是命令</a>；完整链见 <a href="path/2-3.html">2.3 标脏与通知</a></p>
+    </article>
+    <article id="update-callback" class="entry">
+      <h2>update 回调</h2>
+      <p>RNA 属性登记时挂的函数，赋值后被调用。它不改数据也不画图，只做<a href="#tag">标脏</a>和发<a href="#notifier">通知</a>——例如 <code>rna_Object_internal_update</code> 只有一行 <code>DEG_id_tag_update</code>。</p>
+      <p class="later">首次使用：<a href="path/2-2.html">2.2 属性链</a></p>
+    </article>
+    <article id="tag" class="entry">
+      <h2>标脏（tag）</h2>
+      <p>在 ID 上打 <code>ID_RECALC_*</code> 标志（<code>DEG_id_tag_update</code>），告诉求值器「这份数据脏了，轮到求值时重算」。标脏本身不算任何东西。</p>
+      <p class="later">首次使用：<a href="path/2-3.html">2.3 标脏与通知</a></p>
+    </article>
+    <article id="notifier" class="entry">
+      <h2>通知（notifier）</h2>
+      <p>发给界面的消息（<code>WM_main_add_notifier</code>），编码为 <code>NC_* | ND_*</code>：NC 是大类（几何 / 物体 / 场景），ND 是细分。订阅了这类消息的区域下次重画。</p>
+      <p class="later">首次使用：<a href="path/2-3.html">2.3 标脏与通知</a></p>
+    </article>
+
+    <h2>建模核心</h2>
+    <article id="bmesh" class="entry">
+      <h2>BMesh</h2>
+      <p>编辑态的网格表示：顶点 / 边 / loop / 面做成指针互连的网，邻接问题（这条边连着哪些面）按度数跳转就答完。不存盘，只活在编辑态和脚本里；Python 的 <code>bmesh</code> 模块是它的封装。</p>
+      <p class="later">首次使用：<a href="path/3-1.html">3.1 两种网格表示</a></p>
+    </article>
+    <article id="half-edge" class="entry">
+      <h2>BMLoop（半边 / 面角）</h2>
+      <p>一个顶点<strong>在一个面里</strong>的席位。面的 loop 串成环（<code>BMFace.l_first</code>），边的两侧面通过 loop 的 radial 环互找——「边的邻面」靠它回答。</p>
+      <p class="later">首次使用：<a href="path/3-1.html">3.1 两种网格表示</a></p>
+    </article>
+    <article id="edit-mode" class="entry">
+      <h2>编辑模式</h2>
+      <p>Tab 进出是一次格式转换：进 = 数组 Mesh 转成 BMesh 挂到 <code>Mesh.runtime-&gt;edit_mesh</code>；出 = 写回 DNA。编辑期间的改动都打在 BMesh 上，DNA 保持旧值。</p>
+      <p class="later">首次使用：<a href="path/3-3.html">3.3 编辑模式的进出</a></p>
+    </article>
+    <article id="bmo" class="entry">
+      <h2>BMO（BMesh 操作符）</h2>
+      <p>BMesh 层的几何算法表：输入一槽几何、输出一槽几何（如 <code>extrude_face_region</code>）。与 WM 操作符是两层——WM 管上下文和撤销，BMO 管算法；C 操作符和 Python <code>bmesh.ops</code> 调的是同一张表。</p>
+      <p class="later">首次使用：<a href="path/3-4.html">3.4 挤出与 BMO</a></p>
+    </article>
+    <article id="modifier" class="entry">
+      <h2>修改器（modifier）</h2>
+      <p>挂在物体上的变形流水线节点。参数是 DNA（随文件存盘），变形留给求值：在原始网格的副本上跑 <code>modify_mesh</code>，原始数据不动。Apply 才把结果写回 DNA。</p>
+      <p class="later">首次使用：<a href="path/3-5.html">3.5 修改器</a></p>
+    </article>
+    <article id="evaluated" class="entry">
+      <h2>求值副本（evaluated）</h2>
+      <p>depsgraph 求值产出的物体 / 网格副本：<code>obj.evaluated_get(dg)</code> 拿到。修改器结果只在副本上；原始 ID 不动。阶段 4 的主角之一。</p>
+      <p class="later">首次使用：<a href="path/3-5.html">3.5 修改器</a></p>
+    </article>
+
+    <h2>求值与渲染</h2>
     <article id="depsgraph" class="entry">
       <h2>depsgraph（求值图）</h2>
-      <p>把「谁依赖谁」编成图：标脏一块几何，只重算相关节点。视口和 F12 各用一张图。阶段 4 的主角。</p>
-      <p class="later">首次使用：阶段 4（未开）；参考 <a href="d/depsgraph.html">渲染 · Depsgraph</a></p>
+      <p>把「谁依赖谁」编成图：<a href="#tag">标脏</a>一块几何，事件循环空档只重算相关节点。视口和 F12 各用一张图（<code>DAG_EVAL_VIEWPORT</code> / <code>DAG_EVAL_RENDER</code>）。</p>
+      <p class="later">首次使用：<a href="path/4-1.html">4.1 depsgraph 与求值副本</a></p>
+    </article>
+    <article id="cow" class="entry">
+      <h2>copy-on-eval（求值复制）</h2>
+      <p>求值前把原始 ID 复制成<a href="#evaluated">求值副本</a>的机制（5.x 源码 <code>deg_eval_copy_on_write.*</code>，旧称 copy-on-write）。修改器、驱动、矩阵都写在副本上，原始 ID 保持文件里的样子。</p>
+      <p class="later">首次使用：<a href="path/4-1.html">4.1 depsgraph 与求值副本</a></p>
+    </article>
+    <article id="overlay" class="entry">
+      <h2>overlay（叠加层）</h2>
+      <p>视口最后叠上去的辅助显示层：网格线、选中描边、游标。它是 <code>draw/engines/</code> 里的绘制引擎，但<strong>不是渲染引擎</strong>——F12 的引擎表里没有它。</p>
+      <p class="later">首次使用：<a href="path/5-1.html">5.1 视口一帧</a></p>
+    </article>
+    <article id="render-engine" class="entry">
+      <h2>渲染引擎（RenderEngineType）</h2>
+      <p>F12 可选的出图后端：EEVEE（<code>BLENDER_EEVEE</code>）、Workbench、Cycles。渲染管线通过统一接口 <code>RE_engine_render</code> 调它们，对链路上游透明。</p>
+      <p class="later">首次使用：<a href="path/5-1.html">5.1 视口一帧</a>；F12 链见 <a href="path/5-3.html">5.3 F12 链</a></p>
+    </article>
+    <article id="view-transform" class="entry">
+      <h2>视图变换（view transform）</h2>
+      <p>渲染的线性数值到显示器之间的换算（默认 AgX），由 OpenColorIO 实现。只改显示，不改场景数据；设置在 Scene 的 <code>view_settings</code> / <code>display_settings</code> 上。</p>
+      <p class="later">首次使用：<a href="path/5-5.html">5.5 颜色管理入门</a></p>
     </article>
   </main>
   </div>

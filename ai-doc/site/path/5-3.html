@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5.3 F12 链 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 5 · 渲染分道 · 第 3 课</p>
+      <h1>5.3 F12 链</h1>
+      <p class="lede">按 F12 走的不是视口那条路：一个普通操作符 <code>RENDER_OT_render</code> 起头，渲染管线自建 <code>DAG_EVAL_RENDER</code> 图（4.2），再把帧交给当前引擎。链：<code>RENDER_OT_render → RE_RenderFrame → RE_engine_render</code>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="5-2.html">5.2 EEVEE</a>
+      <a href="5-3.html" class="is-active">5.3 F12 链</a>
+      <a href="5-4.html">5.4 Cycles</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>背出 F12 的三段链，并指出每段的文件。</li>
+        <li>说出视口一帧与 F12 的分道点：哪一步开始不再是视口那条路。</li>
+        <li>用 bpy 渲染出图，并换引擎对比。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：分道点在「自建图」</h2>
+      <p>视口一帧（5.1）：事件循环 → 求值视口图 → Draw Manager 画到屏幕区域。F12 是另一条路：</p>
+      <ol class="steps">
+        <li><strong>操作符</strong>：F12 / 菜单 / <code>bpy.ops.render.render()</code> 都进 <code>RENDER_OT_render</code>——2.1 的表在这里又出现了。</li>
+        <li><strong>管线建图</strong>：渲染管线为这一帧自建一张 <code>DAG_EVAL_RENDER</code> 模式的 depsgraph（4.2：级别、可见性全按渲染档），算完即弃。</li>
+        <li><strong>引擎出帧</strong>：<code>RE_engine_render</code> 把求值结果交给当前引擎（EEVEE / Workbench / Cycles），引擎逐块出图，写进 Render Result。</li>
+      </ol>
+      <p>分道点就在第 2 步：视口复用常驻的视口图，F12 自建渲染图。这也是为什么 F12 可以比视口「更光滑」（4.2 的两个级别字段）。</p>
+      <figure class="figure">
+        <pre class="mermaid">sequenceDiagram
+  participant U as 用户（F12 / bpy）
+  participant O as RENDER_OT_render
+  participant P as RE_RenderFrame
+  participant G as 渲染 depsgraph
+  participant E as RE_engine_render
+  U->>O: render.render()
+  O->>P: 起一帧
+  P->>G: DEG_graph_new(DAG_EVAL_RENDER)
+  G->>G: 求值（渲染档级别/可见性）
+  P->>E: 交引擎
+  E->>E: 分块渲染 → Render Result</pre>
+        <figcaption>F12 主线。视口那条路（DRW_draw_view）在 5.1；两条路共享「求值副本」机制，不共享图。</figcaption>
+      </figure>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：三段各在哪</h2>
+      <ul>
+        <li>操作符：<code>RENDER_OT_render</code> 登记在 <code>editors/render/render_internal.cc:1031</code>（idname :1037）。</li>
+        <li>帧入口：<code>RE_RenderFrame</code> 在 <code>render/intern/pipeline.cc:2011</code>；渲染图建在 :1977（<code>DEG_graph_new(..., DAG_EVAL_RENDER)</code>）。</li>
+        <li>引擎出帧：<code>RE_engine_render</code> 在 <code>render/intern/engine.cc:1007</code>，由 <code>RE_RenderFrame</code> 调用（:2129）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：bpy 渲染并换引擎</h2>
+      <p>默认立方体场景，控制台逐段执行：</p>
+      <pre class="src">import bpy
+bpy.ops.render.render(write_still=True)
+# 预期：渲染窗口出图；write_still 把图写到输出路径
+# （输出路径见 bpy.context.scene.render.filepath）</pre>
+      <pre class="src">bpy.context.scene.render.engine = 'BLENDER_WORKBENCH'
+bpy.ops.render.render(write_still=True)
+# 预期：同一场景，Workbench 风格 —— 链不变，换的是最后一环的引擎</pre>
+      <pre class="src">bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+# 渲染完记得切回来</pre>
+      <p>体会：三段链对引擎是透明的——<code>RE_engine_render</code> 面向「引擎接口」工作，EEVEE / Workbench / Cycles 都是接口的实现。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/render.html#q185">Q185</a>：按 F12 的函数链？</li>
+        <li><a href="../qa/render.html#q176">Q176</a>：EEVEE 的 F12 是路径追踪吗？</li>
+        <li><a href="../qa/render.html#q190">Q190</a>：render 模块自己做积分器吗？</li>
+        <li><a href="../qa/render.html#q194">Q194</a>：采样、分块在哪一层？</li>
+        <li>合上笔记：说出视口一帧与 F12 的分道点（哪一步、哪个文件）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../d/index.html">深讲 · 渲染分道</a>：四页总览。</li>
+        <li><a href="../render.html">投影 · 渲染地图</a>：渲染相关子系统的位置。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="5-4.html">5.4 Cycles 接入</a></footer>
+</body>
+</html>

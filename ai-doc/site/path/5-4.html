@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>5.4 Cycles 接入 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+            <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 5 · 渲染分道 · 第 4 课</p>
+      <h1>5.4 Cycles 接入</h1>
+      <p class="lede">Cycles 不住在 <code>source/</code>，而在 <code>intern/cycles/</code>——一个独立渲染器，通过「同步」接入：从 depsgraph 拿<strong>求值后的</strong>场景，翻译成自己的场景图。它读不到、也不需要读编辑态 BMesh。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="5-3.html">5.3 F12 链</a>
+      <a href="5-4.html" class="is-active">5.4 Cycles</a>
+      <a href="5-5.html">5.5 颜色管理</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出 Cycles 从哪拿场景数据（哪张图、哪个函数）。</li>
+        <li>解释「共享求值、不共享 shader 后端」。</li>
+        <li>同一场景用 EEVEE 和 Cycles 各渲一张，说出差异来自哪。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：同步，不是读取</h2>
+      <p>F12 链（5.3）对引擎透明：Cycles 也是 <code>RE_engine_render</code> 的一个实现。区别在于 Cycles 是独立代码库，接入方式是<strong>同步（sync）</strong>：</p>
+      <ol class="steps">
+        <li>渲染管线建好 <code>DAG_EVAL_RENDER</code> 图（4.2），Cycles 从图里把求值后的物体、网格、材质、灯光<strong>翻译</strong>成自己的场景图。</li>
+        <li>材质节点树走另一条翻译：同一套节点语义，编成 Cycles 的 shader 闭包（5.2 说的两套后端之一）。</li>
+        <li>之后积分、采样、降噪全在 Cycles 内部，Blender 只管收图。</li>
+      </ol>
+      <p>为什么读不到编辑态 BMesh：BMesh 挂在 <code>Mesh.runtime</code>（3.3），而渲染图里的网格是求值副本——求值流程本身就会把编辑态转回数组再进图。Cycles 面对的永远是「算完的数组网格」。</p>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：sync_data</h2>
+      <ul>
+        <li>同步入口：<code>intern/cycles/blender/sync.cpp:298</code> 的 <code>BlenderSync::sync_data</code>——把 Blender 场景（求值后的）同步进 Cycles 场景。</li>
+        <li>它拿到的图：渲染管线建的 <code>DAG_EVAL_RENDER</code> 图（<code>render/intern/pipeline.cc:1977</code>，5.3 已走读）。</li>
+        <li>目录分层：<code>intern/cycles/blender/</code> 是接入层（翻译），<code>intern/cycles/scene/</code>、<code>kernel/</code> 是渲染器本体。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：一景两渲</h2>
+      <p>默认立方体场景，控制台逐段执行：</p>
+      <pre class="src">import bpy
+bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+bpy.ops.render.render(write_still=True)
+# 预期：EEVEE 出图（快）</pre>
+      <pre class="src">bpy.context.scene.render.engine = 'CYCLES'
+bpy.context.scene.cycles.samples = 16   # 少采样，省时间
+bpy.ops.render.render(write_still=True)
+# 预期：Cycles 出图（慢一些；光感更物理）</pre>
+      <p>对比两张图：几何、相机、灯光完全一致（共享同一张渲染图的求值结果）；质感、阴影、间接光不同（shader 后端与积分器各自实现）。这就是「共享求值、不共享后端」的肉眼证据。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/render.html#q186">Q186</a>：Cycles 怎样接到 Blender 场景？</li>
+        <li><a href="../qa/render.html#q187">Q187</a>：intern/cycles 内部怎么分层？</li>
+        <li><a href="../qa/render.html#q189">Q189</a>：为什么 BMesh 不进 kernel？</li>
+        <li><a href="../qa/render.html#q193">Q193</a>：视口 Rendered+Cycles 和 F12 共享 session 吗？</li>
+        <li><a href="../qa/render.html#q195">Q195</a>：为什么说「一套节点语义、两套机器码」？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../d/cycles.html">深讲 · Cycles</a>：同步与 kernel 的更多细节。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课：<a href="5-5.html">5.5 颜色管理入门</a></footer>
+</body>
+</html>
