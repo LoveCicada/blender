@@ -56,6 +56,9 @@
   { "title": "6.5 权重与顶点组", "path": "path/6-5.html", "keywords": "权重 顶点组 vertex_groups MDeformVert dvert 蒙皮 骨骼" },
   { "title": "6.6 约束", "path": "path/6-6.html", "keywords": "约束 constraint COPY_LOCATION bConstraint matrix_world depsgraph" },
   { "title": "6.7 EEVEE 探针", "path": "path/6-7.html", "keywords": "EEVEE 探针 lightprobe 光照缓存 辐照度 反射 间接光" },
+  { "title": "6.8 变换系统", "path": "path/6-8.html", "keywords": "变换 transform G R S modal 吸附 比例编辑 TRANSFORM_OT_translate" },
+  { "title": "6.9 曲线与 Curves", "path": "path/6-9.html", "keywords": "曲线 Curve Curves Bezier BezTriple Nurb hair_curves 毛发" },
+  { "title": "6.10 形态键", "path": "path/6-10.html", "keywords": "形态键 shape key KeyBlock Basis value 顶点位置 动画" },
   { "title": "Archify 运行时图", "path": "../archify/blender-runtime.html", "keywords": "邻居图 architecture" },
   { "title": "Archify 主路径", "path": "../archify/blender-mainpath.html", "keywords": "dataflow 按钮 像素" }
 ]

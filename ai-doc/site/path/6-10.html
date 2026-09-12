@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.10 形态键 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 10 课</p>
+      <h1>6.10 形态键：顶点位置的另一份存储</h1>
+      <p class="lede">形态键（shape key）给网格存了<strong>另一套顶点位置</strong>：Basis 是参考形，其余每个键各存一份完整顶点数组，<code>value</code> 滑条控制混入权重。原网格顶点始终不动——又一条「DNA 存参数，求值算结果」的链，和修改器、约束是同一思想。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+      <a href="6-5.html">6.5 权重</a>
+      <a href="6-6.html">6.6 约束</a>
+      <a href="6-7.html">6.7 EEVEE 探针</a>
+      <a href="6-8.html">6.8 变换</a>
+      <a href="6-9.html">6.9 曲线</a>
+      <a href="6-10.html" class="is-active">6.10 形态键</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出形态键的存储结构：Key 块挂 Mesh，KeyBlock 链表各存一份顶点位置。</li>
+        <li>用 bpy 建 Basis + 一个键，改坐标、调 value，验证原网格不动。</li>
+        <li>解释形态键与修改器的异同，以及为什么动画用形态键。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：按权重混入的顶点数组</h2>
+      <ul>
+        <li><strong>存储</strong>：Mesh 上挂一个 <code>Key</code> 数据块，里面是 <code>KeyBlock</code> 链表。第一个永远是 <code>Basis</code>（参考形）；其余每个键存一份和网格顶点一一对应的坐标数组。</li>
+        <li><strong>混合</strong>：每个键有 <code>value</code>（0–1，可超界）。求值时把各键按权重叠加到 Basis 上，算出最终顶点位置——多个键可以同时生效（挑眉 + 张嘴）。</li>
+        <li><strong>非破坏</strong>：<code>me.vertices</code> 永远是建模态的原始位置；形态键的结果只在求值后出现。所以它能做动画：给 <code>value</code> 打关键帧即可，不用动网格。</li>
+        <li>对照修改器：都是「求值时算结果」；区别在于形态键<strong>不改拓扑、只存顶点位置</strong>，且专为「几个离散形态之间插值」设计——表情、修形的标准工具。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[Mesh.vertices<br>原始位置] --> E[求值]
+  B[Key 块] --> C[Basis 参考形]
+  B --> D[KeyBlock × N<br>各存一份顶点数组 + value]
+  C --> E
+  D -->|按 value 加权| E
+  E --> F[最终顶点位置<br>视口 / 渲染]</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：Key、KeyBlock 与求值</h2>
+      <ul>
+        <li>DNA：<code>DNA_key_types.h</code>——<code>KeyBlock</code>（:70，链表节点，内含坐标数组与 <code>value</code>）、<code>Key</code>（:108，块本体）。</li>
+        <li>挂在 Mesh 上：<code>DNA_mesh_types.h:158</code> 的 <code>struct Key *key</code>；RNA 入口 <code>rna_mesh.cc:3321</code> 的 <code>shape_keys</code>。</li>
+        <li>创建入口：<code>rna_object_api.cc:1116</code> 的 <code>shape_key_add</code>（bpy 方法；实现 :476）。</li>
+        <li>求值：<code>blenkernel/intern/key.cc:1133</code> 的 <code>BKE_key_evaluate_object</code>——按权重算出最终坐标数组。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：建键、改形、验证原网格不动</h2>
+      <p>官方二进制控制台逐段执行（默认立方体）：</p>
+      <pre class="src">import bpy
+ob = bpy.context.active_object
+me = ob.data
+ob.shape_key_add(name='Basis')
+sk = ob.shape_key_add(name='Up')
+[kb.name for kb in me.shape_keys.key_blocks]
+# 预期：['Basis', 'Up'] —— 第一个是参考形</pre>
+      <pre class="src">kb = me.shape_keys.key_blocks['Up']
+kb.data[5].co.z += 1.0
+# 预期：视口还看不出变化 —— value 默认 0，权重为零</pre>
+      <pre class="src">kb.value = 1.0
+tuple(round(v, 2) for v in me.vertices[5].co)
+# 预期：原值不变（约 (1, 1, 1)）—— 动的是形态键的存储，不是网格</pre>
+      <pre class="src">dg = bpy.context.evaluated_depsgraph_get()
+ev = ob.evaluated_get(dg).data
+tuple(round(v, 2) for v in ev.vertices[5].co)
+# 预期：z 多了 1.0 —— 求值后的副本上才是混入结果</pre>
+      <p>收尾：<code>kb.value = 0.0</code>。这条实验链把阶段 1（DNA 存储）、阶段 4（求值副本）、本课（形态键）串成了一条线。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检（含阶段 6 验收）</h2>
+      <ul>
+        <li>合上笔记：形态键和修改器有什么异同？（同：求值时算；异：存什么、为什么场景设计）</li>
+        <li>为什么表情动画用形态键，而不是直接给顶点位置打关键帧？</li>
+        <li>阶段 6 验收：十个专题各说一句话——几何节点 / 合成 / 雕刻 / UV / 权重 / 约束 / EEVEE 探针 / 变换 / 曲线 / 形态键。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="4-1.html">4.1 depsgraph 与求值副本</a>：<code>evaluated_get</code> 的出处。</li>
+        <li><a href="6-5.html">6.5 权重与顶点组</a>：「另一份数据」家族的另一成员。</li>
+        <li>主线 + 专题至此完结：回<a href="index.html">路径索引</a>复盘，或进<a href="../catalog.html">目录</a>按模块自由探索。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。主线与专题完——回 <a href="index.html">路径索引</a></footer>
+</body>
+</html>

@@ -113,9 +113,9 @@ flowchart LR
 
 验收：说出视口一帧与 F12 的分道点；解释 overlay 为什么不是 `RenderEngineType`；用 bpy 渲染一张图并指出走了哪条链。自检：[Q163–200](site/qa/render.html#q163)。
 
-### 阶段 6 · 自选专题（7 课，已开）
+### 阶段 6 · 自选专题（10 课，已开）
 
-按兴趣开课，对应旧「弱写 / 未开」区。已开七课：**几何节点（geometry / 字段）、合成（compositor）、雕刻（PBVH）、UV、权重（顶点组）、约束（constraint）、EEVEE 探针**。每课仍按「概念 → 走读 → 实验 → 自检」结构，并已在 [plan.md](plan.md) 弱写区勾选。其余专题（序列 / IO / GHOST 等）仍按兴趣再开。
+按兴趣开课，对应旧「弱写 / 未开」区与建模缺口。已开十课：**几何节点（geometry / 字段）、合成（compositor）、雕刻（PBVH）、UV、权重（顶点组）、约束（constraint）、EEVEE 探针、变换系统（transform modal）、曲线（Curve / Curves 两代）、形态键（shape key）**。每课仍按「概念 → 走读 → 实验 → 自检」结构，并已在 [plan.md](plan.md) 弱写区勾选。其余专题（序列 / IO / GHOST 等）仍按兴趣再开。
 
 | 课 | 目标 | 实验（bpy） | 源码锚点 |
 |----|------|-------------|----------|
@@ -126,6 +126,9 @@ flowchart LR
 | 6.5 权重与顶点组 | 说出权重是顶点域数据；数值在 Mesh、名单在 Object | `vertex_groups.new` → `vg.add([...], 1.0, 'REPLACE')` → 读回 `vertices[i].groups` | `makesdna/DNA_meshdata_types.h`（`MDeformVert`）；`rna_object.cc`（`vertex_groups`）；`MOD_armature.cc` |
 | 6.6 约束 | 说出约束改变换、修改器改几何；结果写在求值矩阵上 | `constraints.new('COPY_LOCATION')` 后对比 `ob.location` 与 `ob.matrix_world` | `makesdna/DNA_constraint_types.h`（`bConstraint`）；`blenkernel/intern/object_update.cc`（`BKE_object_eval_constraints`） |
 | 6.7 EEVEE 探针 | 说出探针是光栅引擎的预计算缓存；Cycles 不需要 | `lightprobe_add(type='VOLUME')`；查 `bpy.data.lightprobes` | `makesdna/DNA_lightprobe_types.h`；`draw/engines/eevee/eevee_lightprobe.hh`（`LightProbeModule`） |
+| 6.8 变换系统 | 说出 G/R/S 共用一条 modal 循环；两种写回 | `bpy.ops.transform.translate(value=...)` 无鼠标跑 exec；开关 `use_snap` / `proportional_edit` | `editors/transform/transform_ops.cc`（`TRANSFORM_OT_translate`、`transform_modal`） |
+| 6.9 曲线与 Curves | 说出两代曲线数据结构及分工 | `data.curves.new('CURVE')` 建 Bezier 并 `bevel_depth`；`data.hair_curves.new` 看新代 | `makesdna/DNA_curve_types.h`（`BezTriple`/`Nurb`）；`DNA_curves_types.h`（`CurvesGeometry`） |
+| 6.10 形态键 | 说出形态键是顶点位置的另一份存储，求值时按权重混入 | `shape_key_add` 建 Basis+键，改 `kb.data[i].co`，调 `value`，`evaluated_get` 对比 | `makesdna/DNA_key_types.h`（`KeyBlock`）；`blenkernel/intern/key.cc`（`BKE_key_evaluate_object`） |
 
 ## 4. 站点改造方案（执行前需逐批确认）
 
@@ -172,5 +175,5 @@ flowchart LR
 | 3.1–3.5 建模核心 | [site/path/3-1.html](site/path/3-1.html) 起五课 | 已写 |
 | 4.1–4.2 求值 | [site/path/4-1.html](site/path/4-1.html) 起两课 | 已写 |
 | 5.1–5.5 渲染分道 | [site/path/5-1.html](site/path/5-1.html) 起五课 | 已写 |
-| 6.1–6.7 自选专题 | [site/path/6-1.html](site/path/6-1.html) 起七课 | 已写 |
+| 6.1–6.10 自选专题 | [site/path/6-1.html](site/path/6-1.html) 起十课 | 已写 |
 | 首页改路径优先 | [site/index.html](site/index.html) | 已写 |

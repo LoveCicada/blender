@@ -285,6 +285,21 @@
       <p>EEVEE 的预计算采样点：球（反射环境贴图）、平面（平面反射）、体积（辐照度栅格）。烘焙结果存光照缓存（<code>LightProbeCache</code>），是引擎运行时状态，不是场景几何。Cycles 路径追踪直接算间接光，不需要探针。</p>
       <p class="later">首次使用：<a href="path/6-7.html">6.7 EEVEE 探针</a></p>
     </article>
+    <article id="transform" class="entry">
+      <h2>变换系统（transform）</h2>
+      <p>G/R/S 背后的 modal 框架（<code>editors/transform/</code>）：invoke 后进 modal 循环，鼠标增量、数字直输、轴约束、吸附、比例编辑都是循环里的处理器。写回分两种：物体模式改 Object 的 TRS，编辑模式改 BMesh 顶点。</p>
+      <p class="later">首次使用：<a href="path/6-8.html">6.8 变换系统</a></p>
+    </article>
+    <article id="curves" class="entry">
+      <h2>曲线 / Curves（两代）</h2>
+      <p>老 <code>Curve</code>：Nurb 链表 + BezTriple（点带双手柄），文本对象也用它，可挤出倒角。新 <code>Curves</code>：属性域设计（点域 / 曲线域），为毛发和几何节点而生。bpy 里分两个集合：<code>data.curves</code> 与 <code>data.hair_curves</code>。</p>
+      <p class="later">首次使用：<a href="path/6-9.html">6.9 曲线与 Curves</a></p>
+    </article>
+    <article id="shape-key" class="entry">
+      <h2>形态键（shape key）</h2>
+      <p>网格顶点位置的另一份存储：Mesh 挂 <code>Key</code> 块，<code>KeyBlock</code> 链表第一个为 Basis，其余各存一份顶点数组，<code>value</code> 控制混入权重。求值时叠加到 Basis 上，原网格不动——表情与修形的标准工具。</p>
+      <p class="later">首次使用：<a href="path/6-10.html">6.10 形态键</a></p>
+    </article>
   </main>
   </div>
   <footer class="wrap">对照 Blender 5.03 alpha 源码树。术语随课程增补。</footer>

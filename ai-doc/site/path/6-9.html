@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.9 曲线与 Curves · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 9 课</p>
+      <h1>6.9 曲线与 Curves：两代数据结构</h1>
+      <p class="lede">Blender 里「曲线」有两代：老的 <code>Curve</code> 数据块（Bezier/NURBS，文本对象也用它），和为几何节点时代重写的 <code>Curves</code>（毛发的基础，属性域设计）。分清哪一代，才知道手里的 API 为什么长这样。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+      <a href="6-5.html">6.5 权重</a>
+      <a href="6-6.html">6.6 约束</a>
+      <a href="6-7.html">6.7 EEVEE 探针</a>
+      <a href="6-8.html">6.8 变换</a>
+      <a href="6-9.html" class="is-active">6.9 曲线</a>
+      <a href="6-10.html">6.10 形态键</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出曲线有两代数据结构，各自为什么场景设计。</li>
+        <li>用 bpy 建一条 Bezier 曲线并给厚度。</li>
+        <li>解释新 Curves 的「点域 / 曲线域」和 Mesh 属性体系的同构。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：老的多面手，新的专才</h2>
+      <ul>
+        <li><strong>老 <code>Curve</code></strong>：一条曲线 = 一串 <code>Nurb</code> 链表；每个 Nurb 要么是 Bezier（控制点是 <code>BezTriple</code>：一个点 + 左右两个手柄），要么是 NURBS（控制点 + 权重）。它能挤出、倒角成管状几何，<strong>文本对象（Font）也是它</strong>——字形的轮廓就是曲线。编辑模式有自己的一套选择/手柄操作。</li>
+        <li><strong>新 <code>Curves</code></strong>（3.x 起，毛发项目催生）：不要 Nurb 链表，改成和 Mesh 同思想的<strong>属性域</strong>设计——点域（每控制点位置、半径、倾斜）+ 曲线域（每根曲线的类型、循环标志）。批量处理十万根毛发时，数组化的属性远快于指针链表；几何节点读写它也零翻译成本。</li>
+        <li>分工现状：建模里的放样、文字、传统曲线编辑仍走老 <code>Curve</code>；毛发、几何节点生成的曲线走新 <code>Curves</code>。两者可互转。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  subgraph 老 Curve
+    A1[Nurb 链表] --> A2[BezTriple<br>点+双手柄]
+    A1 --> A3[NURBS 点+权重]
+    A2 --> A4[挤出/倒角/文本]
+  end
+  subgraph 新 Curves
+    B1[CurvesGeometry] --> B2[点域属性<br>position/radius/tilt]
+    B1 --> B3[曲线域属性<br>类型/循环]
+    B2 --> B4[毛发 / 几何节点]
+  end</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：两套 DNA，两个 bpy 入口</h2>
+      <ul>
+        <li>老代 DNA：<code>DNA_curve_types.h</code>——<code>BezTriple</code>（:83）、<code>Nurb</code>（:148）、<code>Curve</code>（:213）。</li>
+        <li>新代 DNA：<code>DNA_curves_types.h</code>——<code>CurvesGeometry</code>（:120，属性域容器）、<code>Curves</code>（:195，数据块本体）。</li>
+        <li>bpy 入口分开：老代 <code>bpy.data.curves.new(name, type)</code> 走 <code>rna_main_api.cc:495</code>；新代 <code>bpy.data.hair_curves.new(name)</code> 走 :831。集合名也分开：<code>rna_main.cc:408</code> 的 <code>curves</code> vs :546 的 <code>hair_curves</code>（:543 注释明说有意识名不同）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：建一条有厚度的 Bezier</h2>
+      <p>官方二进制控制台逐段执行：</p>
+      <pre class="src">import bpy
+cu = bpy.data.curves.new("MyBez", 'CURVE')
+cu.dimensions = '3D'
+spl = cu.splines.new('BEZIER')
+spl.bezier_points.add(1)
+# 预期：两个贝塞尔控制点（new 自带一个，add(1) 再添一个）</pre>
+      <pre class="src">bp0, bp1 = spl.bezier_points
+bp0.co = (0, 0, 0)
+bp1.co = (2, 2, 0)
+bp0.handle_left_type = bp0.handle_right_type = 'AUTO'
+bp1.handle_left_type = bp1.handle_right_type = 'AUTO'
+# 预期：手柄设自动 —— BezTriple 的点+双手柄结构在 bpy 里原样可见</pre>
+      <pre class="src">cu.bevel_depth = 0.1
+ob = bpy.data.objects.new("MyCurve", cu)
+bpy.context.scene.collection.objects.link(ob)
+# 预期：场景里出现一条有厚度的曲线管 —— bevel 是 Curve DNA 上的参数</pre>
+      <pre class="src">fur = bpy.data.hair_curves.new("Fur")
+type(fur).__name__, fur.bl_rna.identifier
+# 预期：('Curves', 'Curves') —— 新代是另一个数据块类型，不是老 Curve</pre>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li>合上笔记：文本对象（Text）和曲线为什么是同一个数据块家族？</li>
+        <li>新 Curves 为什么不复用 Nurb 链表？（提示：毛发量级 + 几何节点） </li>
+        <li><code>bpy.data.curves</code> 和 <code>bpy.data.hair_curves</code> 各装哪一代？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="6-1.html">6.1 几何节点</a>：毛发节点树的输出就是新 Curves。</li>
+        <li><a href="3-1.html">3.1 两种网格表示</a>：「指针链表 vs 数组属性域」的同一权衡，在曲线身上又演了一遍。</li>
+        <li>下一课：<a href="6-10.html">6.10 形态键</a>——顶点位置的另一份存储。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-10.html">6.10 形态键</a></footer>
+</body>
+</html>
