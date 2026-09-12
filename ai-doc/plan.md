@@ -102,7 +102,7 @@ archify/       ← 邻居图，不另起目录
 - [x] 阶段 4 课页：`path/4-1.html`、`4-2.html`（求值副本 / 两张图）
 - [x] 阶段 5 课页：`path/5-1.html` 至 `5-5.html`（视口一帧 / EEVEE / F12 链 / Cycles / 颜色管理）
 - [x] 首页改路径优先：`site/index.html` 首屏为阶段路线，旧内容收进参考区
-- [x] 阶段 6 自选专题：`path/6-1.html` 至 `6-4.html`（几何节点 / 合成 / 雕刻 / UV）
+- [x] 阶段 6 自选专题：`path/6-1.html` 至 `6-7.html`（几何节点 / 合成 / 雕刻 / UV / 权重 / 约束 / EEVEE 探针）
 
 
 
@@ -153,8 +153,8 @@ archify/       ← 邻居图，不另起目录
 - [ ] Hydra / 外部引擎（目录已点名）
 - [ ] Python API 全集（现只写 UI–数据链上的 `bpy` / `bpy.ops`）
 - [x] UV — [path/6-4.html](site/path/6-4.html)
-- [ ] 权重、约束细表
-- [ ] EEVEE 探针 / 光照缓存
+- [x] 权重、约束细表 — [path/6-5.html](site/path/6-5.html) · [path/6-6.html](site/path/6-6.html)
+- [x] EEVEE 探针 / 光照缓存 — [path/6-7.html](site/path/6-7.html)
 - [ ] 完整 BMO 表、Cycles kernel 细节
 
 

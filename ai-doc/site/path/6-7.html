@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.7 EEVEE 探针与光照缓存 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 7 课</p>
+      <h1>6.7 EEVEE 探针与光照缓存</h1>
+      <p class="lede">光栅化引擎每像素只知道直接光，间接光和镜面反射不会凭空出现——<strong>探针</strong>是场景里预计算的「采样点」：把反射和漫反射间接光先算好存成缓存，着色时查表。这就是为什么探针是 EEVEE 专属：Cycles 的路径追踪直接算，不需要这套缓存。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+      <a href="6-5.html">6.5 权重</a>
+      <a href="6-6.html">6.6 约束</a>
+      <a href="6-7.html" class="is-active">6.7 EEVEE 探针</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出探针解决什么：光栅引擎没有免费的间接光与反射。</li>
+        <li>认识三种探针：球（反射）、平面（平面反射）、体积（辐照度网格）。</li>
+        <li>用 bpy 添加探针；说清探针数据是引擎缓存，不是场景几何。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：预计算，着色时查表</h2>
+      <p>5.2 说过 EEVEE 是光栅化：每个像素着色时，能直接算的只有「光源 → 表面 → 相机」这一条路。镜面里看到旁边的物体、墙面反弹的光——这些要多跳路径，光栅化做不到。探针是妥协方案：</p>
+      <ul>
+        <li><strong>球探针（Sphere）</strong>：在一点把周围场景渲成环境贴图，附近的光滑表面拿它当反射。</li>
+        <li><strong>平面探针（Plane）</strong>：给镜面、地板这类平面反射单独渲一份。</li>
+        <li><strong>体积探针（Volume）</strong>：在空间撒一张 3D 栅格，每格存漫反射间接光（辐照度），物体走过时插值查表。</li>
+        <li>算出来的结果存进<strong>光照缓存</strong>（light probe cache）——它是引擎的运行时数据，可以自动/手动烘焙，<strong>不是 DNA 网格</strong>，删掉探针物体缓存就没了来源。</li>
+      </ul>
+      <p>对照 Cycles：路径追踪逐像素多跳采样，间接光是「算出来的」不是「存起来的」，所以 Cycles 面板里没有探针——Q178 说的「光栅引擎状态」就是这个意思。</p>
+      <pre class="mermaid">flowchart LR
+  A[探针物体<br>DNA: LightProbe] --> B[EEVEE 同步<br>LightProbeModule]
+  B --> C[烘焙 / 预计算]
+  C --> D[光照缓存<br>LightProbeCache]
+  D --> E[着色时查表<br>反射 + 间接光]
+  F[Cycles] -.路径追踪直接算.-> G[不需要探针]</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：DNA、Operator 与引擎模块</h2>
+      <ul>
+        <li>探针的 DNA：<code>DNA_lightprobe_types.h:115</code> 的 <code>LightProbe</code>；类型枚举 :29–31——<code>SPHERE / PLANE / VOLUME</code> 三种。</li>
+        <li>缓存结构：同文件 :194 的 <code>LightProbeCache</code>——烘焙结果的容器。</li>
+        <li>添加 Operator：<code>object_add.cc:1053</code> 的 <code>OBJECT_OT_lightprobe_add</code>（idname 在 :1058）——菜单一「添加 → Light Probe」就走它。</li>
+        <li>引擎侧：<code>draw/engines/eevee/eevee_lightprobe.hh:207</code> 的 <code>LightProbeModule</code>，逐物体同步入口 <code>sync_probe</code>（:239），自动烘焙开关 <code>auto_bake_enabled_</code>（:228）。实现按类型分文件：<code>eevee_lightprobe_sphere/planar/volume.cc</code>。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：加一个体积探针</h2>
+      <p>官方二进制控制台逐段执行（默认场景即可）：</p>
+      <pre class="src">import bpy
+bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+# 预期：切到 EEVEE —— 探针是光栅引擎的概念</pre>
+      <pre class="src">bpy.ops.object.lightprobe_add(type='VOLUME', location=(0, 0, 1))
+probe = bpy.context.active_object
+probe.type, probe.data.type
+# 预期：('LIGHTPROBE', 'VOLUME') —— 探针是一种物体，数据块是 LightProbe</pre>
+      <pre class="src">[(p.name, p.type) for p in bpy.data.lightprobes]
+# 预期：[('LightProbe', 'VOLUME')] —— 场景里的探针数据块清单</pre>
+      <pre class="src">probe.data.influence_distance
+# 预期：一个浮点 —— 影响范围；探针参数都是 DNA，随文件存盘</pre>
+      <p>看效果：3D 视口切到「渲染」着色模式（Z 菜单），在探针范围内放几个不同颜色的物体，能看到物体表面染上彼此的间接色。把引擎切回 <code>'BLENDER_EEVEE'</code> 之外的 Cycles 再渲——探针物体还在场景里，但 Cycles 完全不理它。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/render.html#q178">Q178</a>：探针、光照缓存本轮为什么不写？（现在补写了——注意它的定性：光栅引擎状态）</li>
+        <li>合上笔记：为什么 Cycles 不需要探针？EEVEE 为什么需要？</li>
+        <li>探针物体（DNA）和光照缓存（运行时）各存什么？删掉探针会怎样？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="5-2.html">5.2 EEVEE 与 GPU 材质</a>：光栅引擎的总入口。</li>
+        <li><a href="../d/eevee.html">深讲 · EEVEE / Workbench</a>：引擎分道回看。</li>
+        <li>主线 + 专题至此完结：回<a href="index.html">路径索引</a>复盘，或进<a href="../catalog.html">目录</a>按模块自由探索。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。主线与专题完——回 <a href="index.html">路径索引</a></footer>
+</body>
+</html>

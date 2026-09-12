@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.6 约束 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 6 课</p>
+      <h1>6.6 约束：求值时算变换的规则</h1>
+      <p class="lede">约束和修改器是平行的两套「叠加效果」：<strong>修改器改几何，约束改变换</strong>。加了 Copy Location 的物体，<code>location</code> 一个字节都不会变——约束结果写在求值后的矩阵上，这正是阶段 4「原始数据不动」思想在变换层的回响。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+      <a href="6-5.html">6.5 权重</a>
+      <a href="6-6.html" class="is-active">6.6 约束</a>
+      <a href="6-7.html">6.7 EEVEE 探针</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出约束与修改器的分工：一个改变换，一个改几何。</li>
+        <li>在 depsgraph 求值链上指出约束的位置。</li>
+        <li>用 bpy 加 Copy Location 约束，验证 <code>location</code> 不变而 <code>matrix_world</code> 变。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：规则叠在变换上</h2>
+      <p>约束回答的问题是「这个物体的位置/旋转/缩放，由别的什么决定」：跟着另一个物体走、朝向相机、沿路径运动、限制范围。要点：</p>
+      <ul>
+        <li><strong>存的是规则，不是结果</strong>：约束列表是 DNA（随文件存盘），每条是一个 <code>bConstraint</code>，串成链表按顺序执行。</li>
+        <li><strong>结果在求值时算</strong>：depsgraph 求值物体变换时跑约束栈，输出最终矩阵。DNA 里的 <code>location</code> 保持用户输入的原值。</li>
+        <li><strong>骨骼有独立的一套</strong>：姿态骨骼（pose bone）有自己的约束栈，绑定、IK 都靠它——和物体约束同思想、不同入口。</li>
+        <li>所以「物体明明跟着别人跑，属性面板里的位置却没变」不是 bug：面板显示的是 DNA，运动发生在求值层。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[DNA: location<br>用户输入原值] --> C[depsgraph 求值]
+  B[约束链表<br>bConstraint × N] --> C
+  C --> D[最终矩阵<br>matrix_world]
+  D --> E[视口 / 渲染]
+  F[修改器栈] -.改几何不改变换.-> C</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：链表与求值点</h2>
+      <ul>
+        <li>约束的 DNA：<code>DNA_constraint_types.h:668</code> 的 <code>bConstraint</code>（:669 的 <code>next/prev</code>——链表）；类型枚举 :98–107，比如 <code>CONSTRAINT_TYPE_LOCLIKE</code>（:107）就是 Copy Location。</li>
+        <li>RNA 入口：<code>rna_object.cc:3407</code> 的 <code>constraints</code> 集合（bpy 里 <code>ob.constraints.new(...)</code> 就走它）。</li>
+        <li>求值点：<code>object_update.cc:94</code> 的 <code>BKE_object_eval_constraints</code>，在物体 uber 求值里被调用（:397）——和修改器同一场求值，不同环节。</li>
+        <li>骨骼侧：<code>armature_update.cc:901</code> 的 <code>BKE_pose_constraints_evaluate</code>——姿态骨骼的约束栈入口。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：location 不变，世界矩阵变</h2>
+      <p>官方二进制控制台逐段执行（默认立方体 + 一个 Empty）：</p>
+      <pre class="src">import bpy
+ob = bpy.context.active_object
+tgt = bpy.data.objects.get("Empty")
+if tgt is None:
+    bpy.ops.object.empty_add(location=(3, 0, 0))
+    tgt = bpy.context.active_object
+    bpy.context.view_layer.objects.active = ob
+# 预期：场景里有立方体 ob 和位于 (3,0,0) 的 Empty</pre>
+      <pre class="src">con = ob.constraints.new('COPY_LOCATION')
+con.target = tgt
+tuple(round(v, 2) for v in ob.location)
+# 预期：(0.0, 0.0, 0.0) —— DNA 里的位置没动</pre>
+      <pre class="src">dg = bpy.context.evaluated_depsgraph_get()
+dg.update()
+tuple(round(v, 2) for v in ob.matrix_world.translation)
+# 预期：(3.0, 0.0, 0.0) —— 求值后的世界矩阵已经跟上 Empty</pre>
+      <pre class="src">tgt.location = (0, 5, 0)
+dg.update()
+tuple(round(v, 2) for v in ob.matrix_world.translation), tuple(ob.location)
+# 预期：((0.0, 5.0, 0.0), (0, 0, 0)) —— 目标动，矩阵跟；DNA 位置始终不变</pre>
+      <p>收尾：<code>ob.constraints.remove(con)</code>，再 <code>dg.update()</code>，立方体回到 <code>(0,0,0)</code>——约束没了，求值结果回到 DNA 原值，全程没「改」过物体。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/features.html#q083">Q083</a>：约束（constraint）和修改器是同一功能吗？</li>
+        <li>合上笔记：为什么加了 Copy Location 的物体，<code>ob.location</code> 不变？结果写在哪？</li>
+        <li>约束和修改器在 depsgraph 求值里是同一场求值吗？各自管什么？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="4-1.html">4.1 depsgraph 与求值副本</a>：「原始数据不动」思想的总源头。</li>
+        <li><a href="3-5.html">3.5 修改器</a>：对照「改几何」的那一套。</li>
+        <li>下一课：<a href="6-7.html">6.7 EEVEE 探针</a>——光栅引擎的间接光从哪来。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-7.html">6.7 EEVEE 探针</a></footer>
+</body>
+</html>

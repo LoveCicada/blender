@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.5 权重与顶点组 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 5 课</p>
+      <h1>6.5 权重与顶点组：数值在网格，名字在物体</h1>
+      <p class="lede">6.4 说 UV 是面角域的数据；权重是它的对照组——<strong>顶点域</strong>的数据：每个顶点带一串「（组编号，0–1 权重）」。最反直觉的设计是：<strong>数值存在 Mesh 上，组的名单却存在 Object 上</strong>——共享网格的两个物体，可以有各自的顶点组名单。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+      <a href="6-5.html" class="is-active">6.5 权重</a>
+      <a href="6-6.html">6.6 约束</a>
+      <a href="6-7.html">6.7 EEVEE 探针</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出权重是顶点域数据，和 UV 的面角域对照。</li>
+        <li>解释「数值在 Mesh、名单在 Object」的分离设计及其后果。</li>
+        <li>用 bpy 建顶点组、赋权重、读回来。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：一份稀疏的每顶点数值</h2>
+      <p>顶点组（vertex group）解决「给一部分顶点各配一个强度」的问题：蒙皮时这根骨骼影响哪些顶点、影响多深；物理时哪些点固定。设计上它是<strong>稀疏</strong>的：</p>
+      <ul>
+        <li>每个顶点带一个 <code>MDeformVert</code>：里面是一串 <code>MDeformWeight</code>（组编号 + 权重）。没进任何组的顶点，这串是空的——不花内存。</li>
+        <li>组编号是<strong>整数下标</strong>，不是名字。名字列表（「脊柱」「左手」）存在 Object 的 <code>vertex_groups</code> 里，编号即名单里的位置。</li>
+        <li>后果：两个物体共享一份 Mesh 时，<strong>权重数值共享、组名单各自独立</strong>——同名不同序就会张冠李戴，这是共享网格的经典坑。</li>
+        <li>消费方按「名字 → 编号 → 权重」查表：骨骼修改器就是最大的消费方。权重绘制（Weight Paint）则是 6.3 那套笔画框架的又一个实例。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[Object.vertex_groups<br>名单: 脊柱/左手…] -->|名字 → 编号| C{消费方<br>如骨骼修改器}
+  B[Mesh.dvert<br>每顶点: 编号+权重] -->|编号 → 权重| C
+  C --> D[按权重变形]</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：两处存储与消费</h2>
+      <ul>
+        <li>数值的 DNA：<code>DNA_meshdata_types.h:162</code> 的 <code>MDeformWeight</code>、:172 的 <code>MDeformVert</code>（:179 的 <code>dw</code> 指向权重串）。</li>
+        <li>挂在 Mesh 上：<code>DNA_mesh_types.h:316</code> 的 <code>dvert</code> 字段，访问器 <code>deform_verts()</code>（:424）；自定义数据类型编号 <code>CD_MDEFORMVERT</code>（<code>DNA_customdata_types.h:32</code>）。</li>
+        <li>名单的 RNA：<code>rna_object.cc:3428</code> 的 <code>vertex_groups</code>——注意它定义在 <strong>Object</strong> 的 RNA 里，不在 Mesh。</li>
+        <li>消费方示例：<code>MOD_armature.cc:115</code> 的 <code>deform_verts</code>——骨骼修改器按组名找编号、按编号取权重，逐顶点变形。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：建组、赋值、读回</h2>
+      <p>官方二进制控制台逐段执行（默认立方体，物体模式）：</p>
+      <pre class="src">import bpy
+ob = bpy.context.active_object
+me = ob.data
+vg = ob.vertex_groups.new(name="Top")
+vg.index
+# 预期：0 —— 名单在物体上，编号是它在大名单里的位置</pre>
+      <pre class="src">me.vertices[0].groups
+# 预期：空 —— 还没赋值；稀疏设计：没进组的顶点不存任何权重</pre>
+      <pre class="src">vg.add([0, 1, 2], 1.0, 'REPLACE')
+[(g.group, g.weight) for g in me.vertices[0].groups]
+# 预期：[(0, 1.0)] —— 数值落在 Mesh 的顶点上，存的是编号不是名字</pre>
+      <pre class="src">vg.add([0], 0.25, 'REPLACE')
+me.vertices[0].groups[0].weight
+# 预期：0.25 —— 权重就是 0–1 的浮点，含义由消费方解释</pre>
+      <p>想直观验证「名单在物体」：复制这个物体（<code>Shift+D</code> 联动复制），给副本的顶点组改名——两个物体的 <code>vertex_groups</code> 名单各自独立，但 <code>me.vertices[*].groups</code> 里的数值是同一份。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q019">Q019</a>：CustomData 和 AttributeStorage 属于哪个模块？</li>
+        <li>合上笔记：权重和 UV 分别存在哪个域？为什么权重适合稀疏存储而 UV 不适合？</li>
+        <li>共享网格的两个物体各自改顶点组名单，会发生什么？为什么会这样？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="6-4.html">6.4 UV 展开</a>：面角域 vs 顶点域，对照着记。</li>
+        <li><a href="6-3.html">6.3 雕刻</a>：权重绘制共用笔触框架 <code>PaintStroke</code>。</li>
+        <li>下一课：<a href="6-6.html">6.6 约束</a>——修改器的「变换版」邻居。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-6.html">6.6 约束</a></footer>
+</body>
+</html>

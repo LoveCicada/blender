@@ -270,6 +270,21 @@
       <p>存在<strong>面角</strong>上的二维坐标（<code>CD_PROP_FLOAT2</code>，Mesh 的 <code>uv_layers</code>）。顶点共享、UV 不共享：相邻面的共用顶点 UV 不同就是一条接缝。展开（unwrap）是给所有面角求 (u, v) 的优化问题。</p>
       <p class="later">首次使用：<a href="path/6-4.html">6.4 UV 展开</a></p>
     </article>
+    <article id="vertex-group" class="entry">
+      <h2>顶点组 / 权重（vertex group / weight）</h2>
+      <p>顶点域的稀疏数值：每个顶点带一串「（组编号，0–1 权重）」（<code>MDeformVert</code> / <code>MDeformWeight</code>）。数值存在 Mesh 上，组的名单存在 Object 的 <code>vertex_groups</code> 里——共享网格时数值共享、名单各自独立。骨骼修改器是最大消费方。</p>
+      <p class="later">首次使用：<a href="path/6-5.html">6.5 权重与顶点组</a></p>
+    </article>
+    <article id="constraint" class="entry">
+      <h2>约束（constraint）</h2>
+      <p>叠在物体 / 骨骼变换上的规则（跟随、朝向、限位……），DNA 里是 <code>bConstraint</code> 链表。和修改器平行：修改器改几何，约束改变换；结果在 depsgraph 求值时算进 <code>matrix_world</code>，DNA 的 <code>location</code> 保持原值。</p>
+      <p class="later">首次使用：<a href="path/6-6.html">6.6 约束</a></p>
+    </article>
+    <article id="light-probe" class="entry">
+      <h2>探针 / 光照缓存（light probe）</h2>
+      <p>EEVEE 的预计算采样点：球（反射环境贴图）、平面（平面反射）、体积（辐照度栅格）。烘焙结果存光照缓存（<code>LightProbeCache</code>），是引擎运行时状态，不是场景几何。Cycles 路径追踪直接算间接光，不需要探针。</p>
+      <p class="later">首次使用：<a href="path/6-7.html">6.7 EEVEE 探针</a></p>
+    </article>
   </main>
   </div>
   <footer class="wrap">对照 Blender 5.03 alpha 源码树。术语随课程增补。</footer>

@@ -53,6 +53,9 @@
   { "title": "6.2 合成", "path": "path/6-2.html", "keywords": "合成 compositor use_nodes RE_compositor_execute Render Layers" },
   { "title": "6.3 雕刻", "path": "path/6-3.html", "keywords": "雕刻 PBVH 笔刷 stroke PaintStroke dyntopo 多级细分" },
   { "title": "6.4 UV 展开", "path": "path/6-4.html", "keywords": "UV uv_layers 面角 loop 接缝 seam unwrap CD_PROP_FLOAT2" },
+  { "title": "6.5 权重与顶点组", "path": "path/6-5.html", "keywords": "权重 顶点组 vertex_groups MDeformVert dvert 蒙皮 骨骼" },
+  { "title": "6.6 约束", "path": "path/6-6.html", "keywords": "约束 constraint COPY_LOCATION bConstraint matrix_world depsgraph" },
+  { "title": "6.7 EEVEE 探针", "path": "path/6-7.html", "keywords": "EEVEE 探针 lightprobe 光照缓存 辐照度 反射 间接光" },
   { "title": "Archify 运行时图", "path": "../archify/blender-runtime.html", "keywords": "邻居图 architecture" },
   { "title": "Archify 主路径", "path": "../archify/blender-mainpath.html", "keywords": "dataflow 按钮 像素" }
 ]
