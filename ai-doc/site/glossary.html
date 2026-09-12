@@ -238,6 +238,38 @@
       <p>渲染的线性数值到显示器之间的换算（默认 AgX），由 OpenColorIO 实现。只改显示，不改场景数据；设置在 Scene 的 <code>view_settings</code> / <code>display_settings</code> 上。</p>
       <p class="later">首次使用：<a href="path/5-5.html">5.5 颜色管理入门</a></p>
     </article>
+
+    <h2>专题（阶段 6）</h2>
+    <article id="field" class="entry">
+      <h2>字段（field）</h2>
+      <p>几何节点里菱形接口流的「延迟函数」：不是一个值，而是「给个上下文（如某顶点位置）我算出对应值」。字段在被消费的那一刻按消费方的上下文批量求值，源码是 <code>FN_field.hh</code> 的 <code>Field&lt;T&gt;</code>。</p>
+      <p class="later">首次使用：<a href="path/6-1.html">6.1 几何节点</a></p>
+    </article>
+    <article id="geometry-nodes" class="entry">
+      <h2>几何节点（geometry nodes）</h2>
+      <p>一个修改器（<code>NodesModifierData</code>，Constructive 型）：求值时把几何当数据过一遍节点树，输出新几何。不是 BMesh 替代，也不是独立模块——求值时机、Apply 语义全走修改器链。</p>
+      <p class="later">首次使用：<a href="path/6-1.html">6.1 几何节点</a></p>
+    </article>
+    <article id="compositor" class="entry">
+      <h2>合成器（compositor）</h2>
+      <p>挂在 Scene 上的图像节点树（<code>scene.node_tree</code>，开关 <code>use_nodes</code>）。F12 链上引擎渲完后由 <code>RE_compositor_execute</code> 跑它；引擎管算图，合成管修图。另有视口实时合成的独立路径。</p>
+      <p class="later">首次使用：<a href="path/6-2.html">6.2 合成</a></p>
+    </article>
+    <article id="pbvh" class="entry">
+      <h2>PBVH</h2>
+      <p>雕刻的加速结构：把顶点按空间聚成叶节点的树，笔刷只遍历被刷到的几簇。三种后端——Mesh（普通）、Grids（多级细分）、BMesh（动态拓扑）。实现在 <code>blenkernel/intern/pbvh.cc</code>。</p>
+      <p class="later">首次使用：<a href="path/6-3.html">6.3 雕刻</a></p>
+    </article>
+    <article id="stroke" class="entry">
+      <h2>笔画（stroke / dab）</h2>
+      <p>雕刻与绘制共用的 modal 框架（<code>PaintStroke::modal</code>）：鼠标移动按「间距」采样成一串落笔点（dab），每个 dab 调当前笔刷回调。所以脱手的脚本调不动笔画——它要鼠标上下文。</p>
+      <p class="later">首次使用：<a href="path/6-3.html">6.3 雕刻</a></p>
+    </article>
+    <article id="uv" class="entry">
+      <h2>UV / 接缝（seam）</h2>
+      <p>存在<strong>面角</strong>上的二维坐标（<code>CD_PROP_FLOAT2</code>，Mesh 的 <code>uv_layers</code>）。顶点共享、UV 不共享：相邻面的共用顶点 UV 不同就是一条接缝。展开（unwrap）是给所有面角求 (u, v) 的优化问题。</p>
+      <p class="later">首次使用：<a href="path/6-4.html">6.4 UV 展开</a></p>
+    </article>
   </main>
   </div>
   <footer class="wrap">对照 Blender 5.03 alpha 源码树。术语随课程增补。</footer>

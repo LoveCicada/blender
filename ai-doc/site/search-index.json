@@ -49,6 +49,10 @@
   { "title": "5.3 F12 链", "path": "path/5-3.html", "keywords": "RENDER_OT_render RE_RenderFrame RE_engine_render 渲染" },
   { "title": "5.4 Cycles 接入", "path": "path/5-4.html", "keywords": "Cycles sync_data intern/cycles 同步 采样" },
   { "title": "5.5 颜色管理入门", "path": "path/5-5.html", "keywords": "AgX view_transform OCIO display_settings 颜色管理" },
+  { "title": "6.1 几何节点", "path": "path/6-1.html", "keywords": "几何节点 字段 field NodesModifierData GeometryNodeTree 修改器" },
+  { "title": "6.2 合成", "path": "path/6-2.html", "keywords": "合成 compositor use_nodes RE_compositor_execute Render Layers" },
+  { "title": "6.3 雕刻", "path": "path/6-3.html", "keywords": "雕刻 PBVH 笔刷 stroke PaintStroke dyntopo 多级细分" },
+  { "title": "6.4 UV 展开", "path": "path/6-4.html", "keywords": "UV uv_layers 面角 loop 接缝 seam unwrap CD_PROP_FLOAT2" },
   { "title": "Archify 运行时图", "path": "../archify/blender-runtime.html", "keywords": "邻居图 architecture" },
   { "title": "Archify 主路径", "path": "../archify/blender-mainpath.html", "keywords": "dataflow 按钮 像素" }
 ]

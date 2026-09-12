@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.2 合成 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 2 课</p>
+      <h1>6.2 合成：渲染出图之后的节点树</h1>
+      <p class="lede">F12 并不在引擎写完像素就结束——<strong>渲染管线最后还有一道合成</strong>：把引擎写出的 Render Result 过一遍合成节点树，再交回图像编辑器。辉光、调色、去噪后处理都发生在这里，跟渲染引擎无关。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html" class="is-active">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>在 F12 链上指出合成环节的位置：引擎之后、写盘之前。</li>
+        <li>用 bpy 打开合成并插一个调色节点，重渲染看效果。</li>
+        <li>知道视口合成器的存在（实时、独立于 F12）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：引擎管算，合成管修</h2>
+      <p>分工一句话：<strong>渲染引擎把场景算成图像，合成器把图像修成成品</strong>。</p>
+      <ul>
+        <li>合成节点树挂在 <strong>Scene</strong> 上（<code>scene.node_tree</code>），开关是 <code>scene.use_nodes</code>——和材质节点树完全独立。</li>
+        <li>输入通常是「渲染层」（Render Layers）节点：拿到引擎刚写出的通道（颜色、深度、法向……）；终点是 Composite 节点：结果写回 Render Result。</li>
+        <li>因为发生在引擎之后，<strong>改合成节点不用重渲染场景</strong>——但 F12 会连引擎带合成完整跑一遍。</li>
+        <li>视口还有一个实时合成器（Compositor 面板里开），走的是另一条交互式路径，本课只点名。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[F12] --> B[引擎渲染<br>Cycles / EEVEE]
+  B --> C[Render Result<br>线性像素]
+  C --> D{use_nodes?}
+  D -->|开| E[合成节点树<br>RE_compositor_execute]
+  D -->|关| F[直接交回]
+  E --> G[最终图像]
+  F --> G</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：管线里的合成钩子</h2>
+      <ul>
+        <li>开关的 RNA：<code>rna_scene.cc:9556</code> 的 <code>use_nodes</code>（Scene 上的布尔）。</li>
+        <li>F12 链上的调用点：<code>pipeline.cc:1380</code>——引擎渲完后调 <code>RE_compositor_execute</code>（声明在 <code>RE_compositor.hh:54</code>，实现 <code>render/intern/compositor.cc:906</code>）。</li>
+        <li>视口交互式合成：<code>pipeline.cc:536</code> 的 <code>RE_NewInteractiveCompositorRender</code>——独立于 F12 的另一条链。</li>
+        <li>合成器本体：<code>source/blender/compositor/</code>（算法、缓存资源、着色器都在这）；节点实现一节点一文件，如亮度对比 <code>nodes/composite/nodes/node_composite_brightness_contrast.cc</code>。</li>
+      </ul>
+      <p>对照 5.3 的链：<code>RENDER_OT_render</code> → <code>RE_RenderFrame</code> → <code>RE_engine_render</code>，合成就接在 <code>RE_engine_render</code> 返回之后——所以 Q192 说「不要在 Cycles kernel 里找 Glare 节点实现」。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：给渲染图加一道亮度节点</h2>
+      <p>官方二进制控制台逐段执行（场景里保留默认立方体+灯光即可）：</p>
+      <pre class="src">import bpy
+scene = bpy.context.scene
+scene.use_nodes
+# 预期：False（默认场景没开合成）</pre>
+      <pre class="src">scene.use_nodes = True
+[(n.name, n.bl_idname) for n in scene.node_tree.nodes]
+# 预期：自动建好两节点 —— Render Layers + Composite</pre>
+      <pre class="src">nt = scene.node_tree
+rl = next(n for n in nt.nodes if n.bl_idname == "CompositorNodeRLayers")
+comp = next(n for n in nt.nodes if n.bl_idname == "CompositorNodeComposite")
+bc = nt.nodes.new("CompositorNodeBrightContrast")
+bc.inputs["Bright"].default_value = 20.0
+nt.links.new(rl.outputs["Image"], bc.inputs["Image"])
+nt.links.new(bc.outputs["Image"], comp.inputs["Image"])
+# 预期：节点编辑器里亮度节点插进了 Render Layers → Composite 之间</pre>
+      <pre class="src">bpy.ops.render.render()
+# 预期：渲完的 Render Result 明显变亮 —— 引擎没改，是合成节点动了像素</pre>
+      <p>收尾验证「合成独立于引擎」：把 <code>bc.mute = True</code> 再 F12，亮度消失——同一引擎输出，合成树说了算。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/render.html#q192">Q192</a>：合成和 F12 的关系？</li>
+        <li>合上笔记：在 F12 链上从 <code>RENDER_OT_render</code> 数到 <code>RE_compositor_execute</code>，说出合成发生在哪一步之后。</li>
+        <li>为什么「调合成节点」和「调材质」的重算成本完全不同？（提示：谁要重跑引擎）</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../d/index.html">深讲 · 渲染分道</a>：把合成环节挂回 5.3 的 F12 链。</li>
+        <li><a href="5-3.html">5.3 渲染管线</a>：复习引擎渲染的主链。</li>
+        <li>下一课：<a href="6-3.html">6.3 雕刻</a>——另一套数据结构的编辑世界。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-3.html">6.3 雕刻</a></footer>
+</body>
+</html>

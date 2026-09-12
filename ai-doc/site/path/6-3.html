@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.3 雕刻 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 3 课</p>
+      <h1>6.3 雕刻：PBVH 与笔画</h1>
+      <p class="lede">雕刻不用 BMesh。它有自己的加速结构 <strong>PBVH</strong>（把网格切成一簇簇叶节点，笔刷只摸被刷到的那几簇），和一条自己的笔画管线：鼠标事件 → 采样 → 笔刷回调 → 顶点位移。这就是为什么百万顶点也能实时刷。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html" class="is-active">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出雕刻为什么不用 BMesh：要的是局部高速读写，不是拓扑编辑。</li>
+        <li>认识 PBVH 的三种后端：Mesh / Grids（多级细分）/ BMesh（动态拓扑）。</li>
+        <li>用 bpy 进雕刻模式、查看当前笔刷；知道笔画本身要鼠标上下文。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：另一套编辑世界</h2>
+      <p>阶段 3 的编辑模式是「拓扑手术」：选顶点、挤出、溶解，BMesh 半边结构维护拓扑合法性。雕刻是「批量推拿」：一笔下去成千上万个顶点沿法向位移，<strong>拓扑通常不变</strong>，要的是快。</p>
+      <ul>
+        <li><strong>PBVH</strong>：把顶点按空间聚成叶节点的树。笔刷落下时只遍历被刷圈碰到的叶节点，其余顶点零成本。</li>
+        <li><strong>三种后端</strong>：普通网格（Mesh）、多级细分（Grids，刷的是细分后的栅格）、动态拓扑（BMesh——唯一会改拓扑的雕刻模式，dyntopo）。</li>
+        <li><strong>笔画管线</strong>：雕刻/绘制共用一个 modal 笔画框架——鼠标移动被按「间距」采样成一串 dab（落笔点），每个 dab 调当前笔刷的回调。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[鼠标拖动] --> B[PaintStroke::modal<br>笔画循环]
+  B --> C[按间距采样 dab]
+  C --> D[笔刷回调<br>如 Draw / Smooth]
+  D --> E[PBVH 遍历<br>只摸刷到的叶节点]
+  E --> F[顶点位移 + 标脏]
+  F --> G[视口重绘]</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：从笔画到 PBVH</h2>
+      <ul>
+        <li>笔画框架：<code>editors/sculpt_paint/paint_stroke.cc:1398</code> 的 <code>PaintStroke::modal</code>——雕刻、顶点色、权重绘制共用这条 modal 循环。</li>
+        <li>雕刻代码家：<code>source/blender/editors/sculpt_paint/</code>（网格雕刻在 <code>mesh/</code> 子目录，笔刷在 <code>mesh/brushes/</code>）。</li>
+        <li>PBVH 实现：<code>source/blender/blenkernel/intern/pbvh.cc</code>——建叶节点 <code>build_mesh_leaf_nodes</code>（:81），遍历器 <code>PBVHIter</code>（:678）。</li>
+        <li>三种后端的分叉：<code>sculpt_ops.cc:105</code> 按 <code>bke::pbvh::Type::Mesh / Grids / BMesh</code> 分派——对应普通雕刻、多级细分、动态拓扑。</li>
+      </ul>
+      <p>所以 Q024 说雕刻「和 BMesh 编辑不是同一套」：别在 <code>sculpt_paint/</code> 里找挤出，也别在 <code>editors/mesh/</code> 里找笔刷。</p>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：进雕刻模式看笔刷</h2>
+      <p>官方二进制控制台逐段执行（默认立方体即可）：</p>
+      <pre class="src">import bpy
+bpy.ops.object.mode_set(mode='SCULPT')
+bpy.context.active_object.mode
+# 预期：'SCULPT' —— 模式是 Object 上的标志（回看 2.1）</pre>
+      <pre class="src">sculpt = bpy.context.tool_settings.sculpt
+sculpt.brush.name
+# 预期：当前笔刷名，如 'Draw'</pre>
+      <pre class="src">sorted(b.name for b in bpy.data.brushes if b.use_paint_sculpt)
+# 预期：雕刻可用笔刷清单 —— Clay / Draw / Grab / Smooth …</pre>
+      <pre class="src">sculpt.brush.strength = 0.3
+sculpt.brush.size
+# 预期：强度改了、半径可读 —— 笔刷参数是普通 RNA 属性（2.2 的链）</pre>
+      <p><strong>边界提示</strong>：真正的笔画（<code>bpy.ops.sculpt.brush_stroke</code>）需要鼠标位置和视口上下文，控制台直接调多半报上下文错误——这是有意设计：笔画由 <code>PaintStroke::modal</code> 驱动，不是脱手脚本接口。想看效果，在 3D 视口用鼠标刷几笔，再回控制台对比 <code>len(me.vertices)</code> 没变（普通雕刻不动拓扑）。</p>
+      <pre class="src">bpy.ops.object.mode_set(mode='OBJECT')
+# 收尾：回物体模式</pre>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q024">Q024</a>：雕刻模块为什么不在这 50 题里展开？</li>
+        <li>合上笔记：PBVH 解决什么问题？为什么 BVH 之外还要按「叶节点簇」遍历？</li>
+        <li>说出 PBVH 三种后端各自对应雕刻里的哪个功能。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../catalog.html#blenkernel">目录 · blenkernel</a>：PBVH 住在内核层，编辑器和绘制都依赖它。</li>
+        <li><a href="3-1.html">3.1 Mesh 与 BMesh</a>：对照「拓扑编辑」与「批量位移」两种数据结构取向。</li>
+        <li>下一课：<a href="6-4.html">6.4 UV</a>——面角上的另一份数据。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-4.html">6.4 UV</a></footer>
+</body>
+</html>

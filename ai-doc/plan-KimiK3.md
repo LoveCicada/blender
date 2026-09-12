@@ -113,9 +113,16 @@ flowchart LR
 
 验收：说出视口一帧与 F12 的分道点；解释 overlay 为什么不是 `RenderEngineType`；用 bpy 渲染一张图并指出走了哪条链。自检：[Q163–200](site/qa/render.html#q163)。
 
-### 阶段 6 · 自选专题
+### 阶段 6 · 自选专题（4 课，已开）
 
-按兴趣开课，对应旧「弱写 / 未开」区：几何节点（geometry / 字段）、合成（compositor）、雕刻（PBVH）、UV、权重。每开一课仍按「概念 → 走读 → 实验 → 自检」结构，并在 [plan.md](plan.md) 弱写区勾选。
+按兴趣开课，对应旧「弱写 / 未开」区。本轮开了四课：**几何节点（geometry / 字段）、合成（compositor）、雕刻（PBVH）、UV**。每课仍按「概念 → 走读 → 实验 → 自检」结构，并已在 [plan.md](plan.md) 弱写区勾选。权重等其余专题仍按兴趣再开。
+
+| 课 | 目标 | 实验（bpy） | 源码锚点 |
+|----|------|-------------|----------|
+| 6.1 几何节点 | 说出它是修改器；解释字段按上下文求值 | `modifiers.new('NODES')` + 建节点组，立方体节点接输出，删修改器验证原网格没动 | `modifiers/intern/MOD_nodes.cc`；`functions/FN_field.hh` |
+| 6.2 合成 | 在 F12 链上指出合成环节 | `scene.use_nodes=True`，插 BrightContrast 节点重渲染对比 | `render/intern/pipeline.cc`（`RE_compositor_execute`）；`source/blender/compositor/` |
+| 6.3 雕刻 | 说出 PBVH 三种后端与笔画管线 | 进雕刻模式看 `tool_settings.sculpt.brush`；列 `bpy.data.brushes` | `blenkernel/intern/pbvh.cc`；`editors/sculpt_paint/paint_stroke.cc` |
+| 6.4 UV 展开 | 解释 UV 存在面角上；验证 8 顶点 24 份 UV | `me.uv_layers.active`；对比 `len(vertices)` / `len(loops)` / `len(uv.data)` | `makesrna/intern/rna_mesh.cc`（`uv_layers`、`CD_PROP_FLOAT2`）；`editors/uvedit/` |
 
 ## 4. 站点改造方案（执行前需逐批确认）
 
@@ -155,11 +162,12 @@ flowchart LR
 | 课 | 页面 | 状态 |
 |----|------|------|
 | 阶段索引 | [site/path/index.html](site/path/index.html) | 已写 |
-| 词汇表 | [site/glossary.html](site/glossary.html) | 已写（阶段 0–1 用词） |
+| 词汇表 | [site/glossary.html](site/glossary.html) | 已写（阶段 0–6 用词） |
 | 0.1 工具就位 | [site/path/0-1.html](site/path/0-1.html) | 已写 |
 | 1.1–1.4 数据地基 | [site/path/1-1.html](site/path/1-1.html) 起四课 | 已写 |
 | 2.1–2.3 一次点击 | [site/path/2-1.html](site/path/2-1.html) 起三课 | 已写 |
 | 3.1–3.5 建模核心 | [site/path/3-1.html](site/path/3-1.html) 起五课 | 已写 |
 | 4.1–4.2 求值 | [site/path/4-1.html](site/path/4-1.html) 起两课 | 已写 |
 | 5.1–5.5 渲染分道 | [site/path/5-1.html](site/path/5-1.html) 起五课 | 已写 |
+| 6.1–6.4 自选专题 | [site/path/6-1.html](site/path/6-1.html) 起四课 | 已写 |
 | 首页改路径优先 | [site/index.html](site/index.html) | 已写 |

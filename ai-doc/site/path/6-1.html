@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.1 几何节点 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 1 课</p>
+      <h1>6.1 几何节点：修改器里的程序</h1>
+      <p class="lede">几何节点不是新模块、不是 BMesh 替代——它是<strong>一个修改器</strong>：求值时把几何当数据过一遍节点树，输出新几何。节点树里流的也不是固定值，而是<strong>字段</strong>（field）：到用的地方才按上下文取值的「延迟函数」。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html" class="is-active">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html">6.4 UV</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>说出几何节点在架构里的位置：修改器的一种，跑在 depsgraph 求值时。</li>
+        <li>解释「字段」和「直接值」的区别。</li>
+        <li>用 bpy 从零建一个能出结果的几何节点修改器。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：修改器 + 字段</h2>
+      <p>两个概念撑起整个专题：</p>
+      <ul>
+        <li><strong>它是修改器</strong>：面板里「添加几何节点」就是加了一个 <code>NodesModifierData</code>，类型 Constructive（建设性——可以生成全新几何）。求值时机、标脏、Apply 语义全部沿用阶段 3 的修改器链，没有第二条路。</li>
+        <li><strong>字段（field）</strong>：节点之间连的菱形接口流的是字段——不是「一个数」，而是「给我一个上下文（比如某个顶点的位置），我算出对应的值」。位置、编号、法向都是内置字段。圆接口流的才是算好的具体数据（几何、数值）。</li>
+      </ul>
+      <p>所以节点图不是「从左到右算一遍」的脚本，而是一张<strong>求值计划</strong>：字段在被消费的那一刻，按消费方给的上下文批量求值。这也是它能高效处理百万顶点的原因。</p>
+      <pre class="mermaid">flowchart LR
+  A[原始 Mesh] --> B[Nodes 修改器<br>求值时]
+  B --> C{节点树}
+  C -->|字段按上下文求值| D[新 GeometrySet]
+  D --> E[视口 / 渲染]
+  F[编辑模式 BMesh] -.并行存在.-> A</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：修改器壳与字段核</h2>
+      <ul>
+        <li>修改器注册：<code>MOD_nodes.cc:2171</code> 的 <code>modifierType_Nodes</code>，数据块 <code>NodesModifierData</code>（:2174），类型 Constructive。</li>
+        <li>求值入口：<code>MOD_nodes.cc:1862</code> 的 <code>modify_geometry_set</code>——吃进 GeometrySet，跑节点树，吐新 GeometrySet；:2191 把它挂进 <code>ModifierTypeInfo</code>。</li>
+        <li>字段抽象：<code>source/blender/functions/FN_field.hh:45</code> 的 <code>template&lt;typename T&gt; class Field</code>；批量求值器 <code>FieldEvaluator</code> 在 <code>FN_field_evaluation.hh:21</code>。</li>
+        <li>节点实现：<code>source/blender/nodes/geometry/nodes/</code> 一节点一文件，比如立方体 <code>node_geo_mesh_primitive_cube.cc</code>。</li>
+        <li>底层算法库 <code>source/blender/geometry/</code> 是无状态的——节点树由修改器驱动它，不是反过来（见自检 Q015）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：bpy 建一个「立方体生成器」</h2>
+      <p>官方二进制控制台逐段执行（先选中一个物体，比如默认 Cube）：</p>
+      <pre class="src">import bpy
+ob = bpy.context.active_object
+mod = ob.modifiers.new("GeoDemo", 'NODES')
+mod.bl_rna.properties["node_group"]
+# 预期：指针属性 —— 修改器只存「指向节点组」的引用</pre>
+      <pre class="src">ng = bpy.data.node_groups.new("GeoDemoTree", 'GeometryNodeTree')
+ng.interface.new_socket("Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+ng.interface.new_socket("Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+mod.node_group = ng
+# 预期：修改器面板出现空节点组 —— 5.x 用 interface 声明组输入输出</pre>
+      <pre class="src">n_in = ng.nodes.new("NodeGroupInput")
+n_out = ng.nodes.new("NodeGroupOutput")
+cube = ng.nodes.new("GeometryNodeMeshCube")
+n_in.location = (-300, 0); cube.location = (0, 0); n_out.location = (200, 0)
+ng.links.new(cube.outputs["Mesh"], n_out.inputs["Geometry"])
+# 预期：视口里原物体被替换成节点生成的立方体 —— 原 Mesh 没动</pre>
+      <p>验证「原数据没动」：删掉修改器（<code>ob.modifiers.remove(mod)</code>），原物体原样回来。这就是 Q018 说的「是修改器，不是 BMesh 替代」——想永久改拓扑，只能 Apply。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q015">Q015</a>：geometry 模块是几何节点本身吗？</li>
+        <li><a href="../qa/modules.html#q018">Q018</a>：几何节点为什么说「是修改器，不是 BMesh 替代」？</li>
+        <li><a href="../qa/features.html#q082">Q082</a>：几何节点修改器能代替编辑模式吗？</li>
+        <li>合上笔记：解释为什么节点图里「位置」可以连进任何需要向量的口——字段在什么时候、按什么求值？</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="../c/modifiers.html">深讲 · 修改器</a>：把 Nodes 修改器挂回阶段 3 的求值链。</li>
+        <li><a href="../catalog.html#geometry">目录 · geometry 模块</a>：无状态算法库的边界。</li>
+        <li>下一课：<a href="6-2.html">6.2 合成</a>——渲染出图之后的节点树。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。下一课 <a href="6-2.html">6.2 合成</a></footer>
+</body>
+</html>

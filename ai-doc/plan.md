@@ -102,7 +102,7 @@ archify/       ← 邻居图，不另起目录
 - [x] 阶段 4 课页：`path/4-1.html`、`4-2.html`（求值副本 / 两张图）
 - [x] 阶段 5 课页：`path/5-1.html` 至 `5-5.html`（视口一帧 / EEVEE / F12 链 / Cycles / 颜色管理）
 - [x] 首页改路径优先：`site/index.html` 首屏为阶段路线，旧内容收进参考区
-- [ ] 阶段 6 自选专题（按兴趣再开）
+- [x] 阶段 6 自选专题：`path/6-1.html` 至 `6-4.html`（几何节点 / 合成 / 雕刻 / UV）
 
 
 
@@ -145,14 +145,15 @@ archify/       ← 邻居图，不另起目录
 
 点到为止，**不凑题**。新开一章时先在下表加行，写完再勾，并补 [README.md](README.md) 索引。
 
-- [ ] 合成（compositor）
+- [x] 合成（compositor）— [path/6-2.html](site/path/6-2.html)
 - [ ] 序列（sequencer）
-- [ ] 雕刻细操（sculpt / PBVH）
+- [x] 雕刻细操（sculpt / PBVH）— [path/6-3.html](site/path/6-3.html)
 - [ ] IO 格式（blenloader 之外的导入导出）
 - [ ] GHOST 平台层
 - [ ] Hydra / 外部引擎（目录已点名）
 - [ ] Python API 全集（现只写 UI–数据链上的 `bpy` / `bpy.ops`）
-- [ ] UV、权重、约束细表
+- [x] UV — [path/6-4.html](site/path/6-4.html)
+- [ ] 权重、约束细表
 - [ ] EEVEE 探针 / 光照缓存
 - [ ] 完整 BMO 表、Cycles kernel 细节
 

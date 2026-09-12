@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6.4 UV 展开 · 路径 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>路径 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="index.html" class="is-active">路径</a>
+        <a href="../catalog.html">目录</a>
+        <a href="../qa/index.html">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
+      </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
+    </div>
+    <div class="wrap chapters" data-chapters></div>
+  </header>
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
+    <section class="hero">
+      <p class="kicker">阶段 6 · 自选专题 · 第 4 课</p>
+      <h1>6.4 UV 展开：面角上的另一份数据</h1>
+      <p class="lede">UV 不是顶点的属性，是<strong>面角（loop）的属性</strong>：立方体 8 个顶点却有 24 份 UV——同一个顶点在相邻面上可以占纹理的不同位置，接缝就是这么来的。展开（unwrap）则是把 3D 表面摊平成 2D 坐标的算法活。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">路径索引</a>
+      <a href="6-1.html">6.1 几何节点</a>
+      <a href="6-2.html">6.2 合成</a>
+      <a href="6-3.html">6.3 雕刻</a>
+      <a href="6-4.html" class="is-active">6.4 UV</a>
+    </p>
+
+    <section class="panel">
+      <h2>目标</h2>
+      <ul>
+        <li>解释 UV 为什么存在面角上而不是顶点上（接缝的必要性）。</li>
+        <li>用 bpy 读写 UV 数据，亲手验证「8 顶点、24 份 UV」。</li>
+        <li>知道展开 Operator 的源码位置与上下文要求。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>概念：顶点共享，UV 不共享</h2>
+      <p>3D 里一个顶点被几个面共用是好事（省内存、平滑法向）。但贴图时，同一个顶点在不同面上可能要落在纹理的不同位置——比如立方体的一条棱，左右两个面在纹理上往往不挨着。解决办法：<strong>UV 按面角存</strong>。</p>
+      <ul>
+        <li>每个面有 N 个面角（loop），每个面角存一份二维 <code>(u, v)</code>。立方体 6 面 × 4 角 = 24 份。</li>
+        <li>相邻面的共用顶点若 UV 值相同，纹理在那里连续；不同，就是一条<strong>接缝</strong>（seam 的视觉来源）。</li>
+        <li>这就是 3.1 说的「面角层数据」的又一个实例：顶点色、UV、蒙皮权重里的环数据都挂在 loop 域。</li>
+        <li>展开（unwrap）= 给所有面角求一组 (u, v)，尽量保面积、少拉伸——是数值优化问题，不是拓扑操作。</li>
+      </ul>
+      <pre class="mermaid">flowchart LR
+  A[Mesh 8 顶点] --> B[6 面 × 4 面角<br>= 24 loops]
+  B --> C[每 loop 一份 float2<br>= 24 份 UV]
+  C --> D{相邻面同顶点<br>UV 相同?}
+  D -->|是| E[纹理连续]
+  D -->|否| F[接缝 seam]</pre>
+    </section>
+
+    <section class="panel">
+      <h2>源码走读：属性、RNA 与展开</h2>
+      <ul>
+        <li>UV 的存储类型：<code>rna_mesh.cc:1698</code> 附近可见 UV 层是 <code>CD_PROP_FLOAT2</code>——每个面角一个二维浮点，走 CustomData / 属性体系（Q019）。</li>
+        <li>RNA 入口：<code>rna_mesh.cc:3116</code> 的 <code>uv_layers</code>（Mesh 上的集合属性，可有多套 UV）。</li>
+        <li>UV 编辑器代码家：<code>source/blender/editors/uvedit/</code>——选区、孤岛（island）、展开都在这。</li>
+        <li>展开 Operator：<code>uvedit_unwrap_ops.cc:3011</code> 的 <code>UV_OT_unwrap</code>（idname 在 :3029）——就是编辑模式下按 U 弹出的那个 Unwrap。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>动手实验：数清 24 份 UV</h2>
+      <p>官方二进制控制台逐段执行（默认立方体，物体模式即可）：</p>
+      <pre class="src">import bpy
+me = bpy.context.active_object.data
+uv = me.uv_layers.active or me.uv_layers.new(name="UVMap")
+len(me.vertices), len(me.loops), len(uv.data)
+# 预期：(8, 24, 24) —— UV 份数跟着 loop 走，不跟顶点走</pre>
+      <pre class="src">uv.data[0].uv
+# 预期：Vector((x, y)) —— 第一份面角的二维坐标</pre>
+      <pre class="src">poly = me.polygons[0]
+[(li, round(uv.data[li].uv.x, 3), round(uv.data[li].uv.y, 3)) for li in poly.loop_indices]
+# 预期：第一个面的 4 个面角各一份 UV —— 面角索引就是 uv.data 的索引</pre>
+      <pre class="src">uv.data[0].uv = (0.0, 0.0)
+# 预期：UV 编辑器里对应角跳到原点 —— 直接写属性就生效（标脏链见 2.3）</pre>
+      <p><strong>边界提示</strong>：<code>bpy.ops.uv.unwrap()</code> 要求编辑模式 + 选中面 + 合适的区域上下文，控制台裸调多半报 context 错误。想走完整链：3D 视口 Tab 进编辑模式、A 全选、U → Unwrap，然后回控制台重跑上面的读取，对比展开前后的 UV 值。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自检（含阶段 6 验收）</h2>
+      <ul>
+        <li><a href="../qa/modules.html#q019">Q019</a>：CustomData 和 AttributeStorage 属于哪个模块？</li>
+        <li>合上笔记：为什么「把 UV 存在顶点上」会导致无法表达接缝？</li>
+        <li>阶段 6 验收：四个专题各说一句话——几何节点（修改器里的程序）、合成（引擎之后的节点树）、雕刻（PBVH 上的笔画）、UV（面角上的数据）。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>拓展</h2>
+      <ul>
+        <li><a href="3-1.html">3.1 Mesh 与 BMesh</a>：面角（loop）概念的源头。</li>
+        <li><a href="../catalog.html#blenkernel">目录 · blenkernel</a>：CustomData / 属性体系的所在层。</li>
+        <li>主线 + 专题至此完结：回<a href="index.html">路径索引</a>复盘，或进<a href="../catalog.html">目录</a>按模块自由探索。</li>
+      </ul>
+    </section>
+  </main>
+  </div>
+  <footer class="wrap">对照 Blender 5.03 alpha 源码树 + 官方 5.x 二进制。主线与专题完——回 <a href="index.html">路径索引</a></footer>
+</body>
+</html>

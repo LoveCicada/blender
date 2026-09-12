@@ -23,7 +23,7 @@
 | [overview.md](overview.md) | 源码阅读范围；模块地图见学习站 |
 | [checkout-status.md](checkout-status.md) | 源码拉取检查：分析用文本已齐，lib / 资产 / LFS 不必补 |
 | [site/index.html](site/index.html) | 学习站总览（本机打开）：目录 + 五套划分。阅读器：顶栏切深浅色、搜标题、点章节轨跳到本页一节。主线深讲页有时序 / 流程 / 结构图，需联网加载 Mermaid |
-| [site/path/index.html](site/path/index.html) | 学习路径（课程制主线，见 plan-KimiK3）：阶段 0–1 已写；每课 = 概念 + 源码走读 + bpy 实验 + 自检 |
+| [site/path/index.html](site/path/index.html) | 学习路径（课程制主线，见 plan-KimiK3）：阶段 0–6 已写，共二十四课；每课 = 概念 + 源码走读 + bpy 实验 + 自检 |
 | [site/glossary.html](site/glossary.html) | 词汇表：课里首次出现的术语先落地在这里 |
 | [site/b/index.html](site/b/index.html) | 数据：DNA / RNA / Python UI / Operator / 更新 |
 | [site/c/index.html](site/c/index.html) | 建模：Mesh / BMesh / 编辑模式 / 修改器 |
