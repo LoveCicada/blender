@@ -5,34 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>子系统目录 · Blender 学习站</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="index.html">总览</a>
         <a href="catalog.html" class="is-active">目录</a>
         <a href="qa/index.html">问答</a>
-        <a href="../archify/blender-runtime.html">Archify</a>
-        <a href="modules.html">模块</a>
-        <a href="responsibilities.html">职责</a>
-        <a href="features.html">功能</a>
         <a href="b/index.html">数据</a>
         <a href="c/index.html">建模</a>
         <a href="d/index.html">渲染</a>
-        <a href="ui-data.html">UI–数据</a>
-        <a href="render.html">渲染</a>
+        <a href="../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
 
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">权威正文</p>
       <h1>子系统目录</h1>
       <p class="lede">每条只写职责、路径、邻居。五套划分页都链回这里。源码符号保持英文；正文中文。</p>
     </section>
+    <p class="subnav">
+      <a href="catalog.html" class="is-active">目录</a>
+      <a href="modules.html">模块</a>
+      <a href="responsibilities.html">职责</a>
+      <a href="features.html">功能</a>
+      <a href="ui-data.html">UI–数据</a>
+      <a href="render.html">渲染地图</a>
+    </p>
 
     <p class="toc">
       <a href="#makesdna">makesdna</a>
@@ -389,7 +408,7 @@
       <p class="later">深讲：<a href="d/eevee.html">EEVEE</a> 与 <a href="d/cycles.html">Cycles</a> 的编译分叉。几何节点见 <a href="c/modifiers.html">修改器</a>。</p>
     </article>
   </main>
-
+  </div>
   <footer class="wrap">目录是权威。投影页若与这里冲突，以本页为准。</footer>
 </body>
 </html>

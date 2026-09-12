@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>问答 · 渲染 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>二百问答 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="index.html" class="is-active">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">Q151–200 · 渲染</p>
       <h1>求值之后才分道</h1>
@@ -453,6 +469,7 @@
       <a href="index.html">回到问答入口</a>
     </p>
   </main>
+  </div>
   <footer class="wrap">深讲：<a href="../d/index.html">渲染</a>。合成 / Hydra 点到为止。</footer>
 </body>
 </html>

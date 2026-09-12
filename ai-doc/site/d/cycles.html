@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cycles · 渲染 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="index.html" class="is-active">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#render">render</a> / <a href="../catalog.html#cycles">Cycles</a></p>
       <h1>F12 按引擎字符串分发</h1>
@@ -39,6 +55,10 @@
       <figcaption>F12 用渲染图求值（Render 修改器级别），再进引擎回调。</figcaption>
     </figure>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>F12 要按场景里的引擎字符串分发，再另建 <code>DAG_EVAL_RENDER</code> 图。Cycles 把求值物体同步成自己的 scene / kernel，不读编辑态 BMesh，也不复用 EEVEE 的 GPU 材质机器码。</p>
+    </section>
+    <section class="panel">
       <h2>Cycles 怎么接到场景</h2>
       <p>Python <code>CyclesRender</code>（<code>intern/cycles/blender/addon/__init__.py</code>，<code>bl_idname = 'CYCLES'</code>）→ <code>_cycles.render</code>。<code>BlenderSync::sync_data</code>（<code>intern/cycles/blender/sync.cpp</code>）从 depsgraph 迭代求值物体；网格 <code>object_to_mesh</code>（<code>util.h</code>）。</p>
       <ul>
@@ -49,16 +69,35 @@
         <li><code>device/</code>：CPU / CUDA / …（预编译库，分析不拉）</li>
       </ul>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>节点 → 闭包</h2>
       <p><code>intern/cycles/blender/shader.cpp</code>：<code>sync_materials</code> → <code>add_nodes</code> / <code>add_node</code>，目标 <code>SHD_OUTPUT_CYCLES</code>，再 <code>SVMCompiler</code>。运行时 <code>kernel/svm/closure.h</code>。与 EEVEE 的 <code>GPU_material_from_nodetree</code> 分道。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>和建模收束</h2>
       <p>Cycles 看到的是求值网格（修改器已按 Render 模式应用）。编辑模式的 BMesh 不会直接进 kernel。改拓扑必须写回并标脏——B + C 已经把这条说完。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>它写什么</th><th>它不写什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>RENDER_OT_render</code></td><td>按 <code>scene.r.engine</code> 分发</td><td>自己不算光</td></tr>
+            <tr><td><code>BlenderSync</code></td><td>求值物体 → Cycles scene</td><td>不读 <code>edit_mesh</code></td></tr>
+            <tr><td>kernel</td><td>SVM / 闭包 / PathTrace</td><td>不跑 BMesh 算子</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>未知引擎 id 回落 <code>BLENDER_EEVEE</code>。Cycles 经 Python <code>bl_idname = 'CYCLES'</code> 注册进同一张表。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>视口 Material 预览常走 EEVEE（<code>RE_USE_EEVEE_VIEWPORT</code>）。Rendered + Cycles 才是 external engine。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>RE_engine_render</code> · <code>add_nodes</code> · <a href="../qa/render.html#q185">Q185</a> · <a href="../qa/render.html#q186">Q186</a></p></section>
+    </div>
     <p class="later">Hydra、外部引擎只承认 <code>source/blender/render/hydra</code> 存在。合成在 F12 pipeline 里另有一条，本轮不写。</p>
   </main>
+  </div>
   <footer class="wrap">主线到此可以闭环：操作 → 数据 → 求值 → 像素。</footer>
 </body>
 </html>

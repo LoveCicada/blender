@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mesh / BMesh · 建模 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="index.html" class="is-active">建模</a>
         <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#blenkernel">blenkernel</a> / <a href="../catalog.html#bmesh">bmesh</a></p>
       <h1>为什么编辑不用数组网格</h1>
@@ -35,6 +51,10 @@
       <a href="modifiers.html">修改器</a>
     </p>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>同一份网格要同时满足存盘、求值、绘制，以及「这个面的邻边」。前三件事喜欢按域打包的数组；最后一件需要半边。两套表示并存，而不是把 DNA 改成指针网，也不是让挤出走线性扫描。</p>
+    </section>
+    <section class="panel">
       <h2>持久 Mesh</h2>
       <p>DNA 字段见<a href="../b/dna.html">数据 · DNA</a>。<code>Mesh::runtime</code>（<code>BKE_mesh_types.hh</code> 的 <code>MeshRuntime</code>）<strong>不进文件</strong>。编辑态指针是：</p>
       <pre class="src">/* MeshRuntime */
@@ -42,7 +62,7 @@ std::shared_ptr&lt;BMEditMesh&gt; edit_mesh;
 /* plus mesh_eval, wrapper_type, batch_cache, ... */</pre>
       <p><code>BMEditMesh</code>（<code>BKE_editmesh.hh</code>）：<code>BMesh *bm</code>、looptris、selectmode、<code>needs_flush_to_id</code>。访问：<code>BKE_editmesh_from_object</code>（<code>blenkernel/intern/editmesh.cc</code>）。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>BMesh 元素</h2>
       <p><code>source/blender/bmesh/bmesh_class.hh</code>：每个元素带 <code>BMHeader.hflag</code>。</p>
       <ul>
@@ -53,8 +73,27 @@ std::shared_ptr&lt;BMEditMesh&gt; edit_mesh;
       </ul>
       <p>选择位 <code>BM_ELEM_SELECT</code>（<code>hflag</code> 第 0 位）。测试：<code>BM_elem_flag_test</code>；写入：<code>BM_elem_select_set</code>。网格上还有 <code>totvertsel</code> 等计数。</p>
     </section>
-    <p class="later">wrapper 类型 <code>ME_WRAPPER_TYPE_BMESH</code> 让绘制在未写成数组前也能吃编辑网格。</p>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>它写什么</th><th>它不写什么</th></tr></thead>
+          <tbody>
+            <tr><td>DNA <code>Mesh</code></td><td>数组顶点数、属性层、进文件的字段</td><td>半边邻接、编辑选择历史</td></tr>
+            <tr><td>BMesh</td><td>点/边/环/面互相指，<code>hflag</code> 选择</td><td>不进 <code>.blend</code></td></tr>
+            <tr><td><code>BMEditMesh</code></td><td>挂在 <code>MeshRuntime.edit_mesh</code>，带 looptris</td><td>不替代 <code>Object.mode</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>编辑态指针放 <code>MeshRuntime</code>，明确不存盘。保存前必须先转回数组。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>BMesh 不是第二种文件格式。磁盘上永远是 DNA Mesh。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>MeshRuntime.edit_mesh</code> · <code>BM_elem_select_set</code> · <a href="../catalog.html#bmesh">bmesh</a> · <a href="../qa/modules.html#q013">Q013</a></p></section>
+    </div>
+    <p class="later">wrapper 类型 <code>ME_WRAPPER_TYPE_BMESH</code> 让绘制在未写成数组前也能吃编辑网格。问答：<a href="../qa/features.html#q063">Q063</a>。邻居图：<a href="../../archify/blender-runtime.html">Archify</a>。</p>
   </main>
+  </div>
   <footer class="wrap"><a href="editmode.html">下一页：进出编辑模式</a></footer>
 </body>
 </html>

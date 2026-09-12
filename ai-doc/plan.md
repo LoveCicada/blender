@@ -8,7 +8,7 @@
 ## 目的
 
 - 搞清 Blender **怎么设计**，主线是 **3D 网格编辑** 和 **渲染分道**。
-- 结论写成可打开的静态 HTML（无构建、无 JS）。
+- 结论写成可打开的静态 HTML（无构建；学习站可用 [`site/site.js`](site/site.js) 做主题、搜索、章节轨）。
 - 本文件供后续会话对照勾选，不复制 200 道题正文。
 
 ## 内容模型
@@ -71,6 +71,14 @@ archify/       ← 邻居图，不另起目录
 
 建模不单独成问答册：拓扑 / 挤出 / 修改器进**功能**，BMesh / editors 边界进**模块**。
 
+### 学习站外壳与深讲加厚
+
+- [x] [`site/styles.css`](site/styles.css) + [`site/site.js`](site/site.js) + [`site/search-index.json`](site/search-index.json) — 主题、侧栏 TOC、章节轨、搜索、结论卡
+- [x] 全 `site/**/*.html` 换阅读器外壳（顶栏收敛为总览 · 目录 · 问答 · 数据 · 建模 · 渲染 · Archify）
+- [x] 目录 / 五套划分 / 问答只换外壳，不扩 21 条、不重写 200 题
+- [x] 13 篇深讲加厚为：它解决什么 / 走读 / 对照表 / 三张结论卡
+- [x] 不改 [`archify/`](archify/README.md)
+
 ### Archify 邻居图
 
 - [x] [archify/README.md](archify/README.md) — 打开方式；catalog 仍是权威
@@ -123,6 +131,7 @@ archify/       ← 邻居图，不另起目录
 - 不重复粘贴整页深讲；问答点破设计选择，深讲给函数走读。
 - 不要为了看图去跑 `make update`、拉 `lib/` 或 `git lfs pull`。
 - SVG 内用英文标签。显示名用中文；源码符号保持英文。
+- 学习站无构建：允许手写 [`site/site.js`](site/site.js)。不要改 [`archify/`](archify/README.md)。
 
 ## 维护约定
 

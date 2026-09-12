@@ -5,24 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>更新与撤销 · 数据 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>数据 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="index.html" class="is-active">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="../d/index.html">渲染</a>
-        <a href="../ui-data.html">UI–数据地图</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">更新与撤销</p>
       <h1>改完如何让别人知道</h1>
@@ -43,6 +58,10 @@
     </figure>
 
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>视口不轮询每个顶点。属性路径和 Operator 路径必须在同一对 API 汇合：标脏让 depsgraph 知道重算，notifier 让编辑器知道重画。带 <code>OPTYPE_UNDO</code> 的命令再推一步撤销。</p>
+    </section>
+    <section class="panel">
       <h2>链 A：拖属性</h2>
       <pre class="src">WM_main
   wm_window_events_process
@@ -58,7 +77,7 @@
   /* next tick: wm_event_do_refresh_wm_and_depsgraph */</pre>
     </section>
 
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>链 B：跑 Operator</h2>
       <pre class="src">wm_operator_invoke
   ED_operator_editmesh          /* poll */
@@ -72,17 +91,36 @@
       <p><code>EDBM_update</code> 还会按参数重算法线 / looptris，供编辑模式绘制。几何节点和修改器的「应用」发生在 depsgraph 求值，不是这个函数里——那是建模 / 渲染章。</p>
     </section>
 
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>Notifier 与撤销</h2>
       <p>入队：<code>WM_event_add_notifier</code> / <code>WM_main_add_notifier</code>（无 context 时，RNA update 常用后者）。出队：<code>wm_event_do_notifiers</code>，各编辑器 listener 决定重画哪块区域。</p>
       <p>撤销：<code>ot-&gt;flag</code> 含 <code>OPTYPE_UNDO</code> 时，<code>wm_operator_finished</code> → <code>ED_undo_push_op</code>（<code>editors/undo/ed_undo.cc</code>）。执行期间 <code>wm-&gt;op_undo_depth</code> 增加，避免嵌套 op 再推一步。Python <code>bpy.ops</code> 默认常压住 undo，除非标明 <code>is_undo</code>。</p>
     </section>
 
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>接到建模 / 渲染</h2>
       <p>编辑模式多一跳：Operator → BMesh → 写回 Mesh → 上面的 tag。物体模式没有 BMesh。求值之后才分视口 / Cycles，见地图 <a href="../render.html">渲染</a> 和 <a href="../d/index.html">渲染章</a>。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>API</th><th>听众</th><th>不做什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>DEG_id_tag_update</code></td><td>depsgraph</td><td>不立刻跑修改器</td></tr>
+            <tr><td><code>WM_main_add_notifier</code></td><td>各编辑器 listener</td><td>不写 DNA</td></tr>
+            <tr><td><code>ED_undo_push_op</code></td><td>撤销栈</td><td>没有 <code>OPTYPE_UNDO</code> 就不推</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>标脏和通知拆开：可以只重画、也可以只求值。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>notifier 不是 depsgraph。它通知 UI 哪块脏了，求值另走 tag。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>EDBM_update</code> · <code>wm_event_do_notifiers</code> · <a href="../qa/ui-data.html#q143">Q143</a> · <a href="../../archify/blender-mainpath.html">主路径图</a></p></section>
+    </div>
   </main>
+  </div>
   <footer class="wrap">数据章到此。见 <a href="../c/index.html">建模</a>、<a href="../d/index.html">渲染</a>。</footer>
 </body>
 </html>

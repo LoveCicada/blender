@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EEVEE · 渲染 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="index.html" class="is-active">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#eevee">EEVEE</a> / <a href="../catalog.html#workbench">Workbench</a></p>
       <h1>实时引擎吃 GPU 材质</h1>
@@ -39,14 +55,37 @@
       <figcaption>同一份节点树。EEVEE：<code>GPU_material_from_nodetree</code>。Cycles：<code>add_nodes</code>。不是同一份机器码。</figcaption>
     </figure>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>视口和部分 F12 要在光栅管线上出像素。EEVEE 吃求值场景和 GPU 材质；Workbench 用更便宜的 Solid / 线框，不编译完整节点树。两者都不是 Cycles kernel。</p>
+    </section>
+    <section class="panel">
       <h2>节点 → GPU</h2>
       <p><code>ShaderModule::material_shader_get</code> → <code>GPU_material_from_nodetree</code>（<code>gpu/intern/gpu_material.cc</code>，目标 <code>GPU_MAT_EEVEE</code>）。内部 <code>inline_shader_node_tree(SHD_OUTPUT_EEVEE)</code>，再 <code>ntreeGPUMaterialNodes</code> / <code>ntreeExecGPUNodes</code>（<code>nodes/shader/</code>）。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>Workbench</h2>
       <p><code>draw/engines/workbench/workbench_engine.cc</code>。Solid / 线框 / 快速 F12。不走完整着色节点 GPU 材质：MatCap、工作室光、cavity。建模看结构时最常碰到。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>引擎</th><th>吃什么</th><th>不吃什么</th></tr></thead>
+          <tbody>
+            <tr><td>EEVEE</td><td>求值 Scene / GPU 材质</td><td>未求值的 BMesh、SVM 字节码</td></tr>
+            <tr><td>Workbench</td><td>MatCap、工作室光、cavity</td><td>完整 Principled 节点树</td></tr>
+            <tr><td>F12 + EEVEE</td><td><code>DRW_render_to_image</code> 光栅</td><td>路径追踪 kernel</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>同一份节点树，EEVEE 编译到 GPU shader（<code>SHD_OUTPUT_EEVEE</code>）。Cycles 另走 <code>add_nodes</code>。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>EEVEE 的 F12 仍是光栅，不是路径追踪。用户说「渲染」要看 <code>scene.r.engine</code>。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>GPU_material_from_nodetree</code> · <code>eevee::Instance</code> · <a href="../qa/render.html#q174">Q174</a> · <a href="../qa/render.html#q176">Q176</a></p></section>
+    </div>
   </main>
+  </div>
   <footer class="wrap"><a href="cycles.html">下一页：F12 / Cycles</a></footer>
 </body>
 </html>

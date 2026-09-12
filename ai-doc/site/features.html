@@ -5,34 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>按功能 · Blender 学习站</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="index.html">总览</a>
-        <a href="catalog.html">目录</a>
+        <a href="catalog.html" class="is-active">目录</a>
         <a href="qa/index.html">问答</a>
-        <a href="../archify/blender-runtime.html">Archify</a>
-        <a href="modules.html">模块</a>
-        <a href="responsibilities.html">职责</a>
-        <a href="features.html" class="is-active">功能</a>
         <a href="b/index.html">数据</a>
         <a href="c/index.html">建模</a>
         <a href="d/index.html">渲染</a>
-        <a href="ui-data.html">UI–数据</a>
-        <a href="render.html">渲染</a>
+        <a href="../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
 
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">投影 3</p>
       <h1>按用户功能</h1>
       <p class="lede">从「我在软件里做什么」反查目录。着色块表示这条功能会碰到该模块；空白表示通常不走。</p>
     </section>
+    <p class="subnav">
+      <a href="catalog.html">目录</a>
+      <a href="modules.html">模块</a>
+      <a href="responsibilities.html">职责</a>
+      <a href="features.html" class="is-active">功能</a>
+      <a href="ui-data.html">UI–数据</a>
+      <a href="render.html">渲染地图</a>
+    </p>
 
     <figure class="figure">
       <img src="diagrams/features.svg" alt="功能与 BKE、BMesh、Editors、Depsgraph、Draw、Cycles 对照表">
@@ -43,27 +62,28 @@
       <h2>物体模式</h2>
       <p>选择物体、变换物体、进出编辑模式。<a href="catalog.html#editors-object">editors/object</a>、<a href="catalog.html#editors-transform">transform</a> 改 <a href="catalog.html#blenkernel">Object / BKE</a>，经 <a href="catalog.html#depsgraph">depsgraph</a> 更新 <a href="catalog.html#draw">draw</a>。不进 BMesh，除非进入编辑模式。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>编辑模式改网格</h2>
       <p>挤出、切割、点边面选择。<a href="catalog.html#editors-mesh">editors/mesh</a> 操作 <a href="catalog.html#bmesh">bmesh</a>，写回 Mesh，再求值、重画。深讲：<a href="c/index.html">建模</a>。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>修改器</h2>
       <p>参数存在物体上（DNA + RNA 面板）。计算发生在 <a href="catalog.html#modifiers">modifiers</a> + <a href="catalog.html#depsgraph">depsgraph</a>。视口和 F12 都吃求值后的网格，所以 Cycles 列也是着色的。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>材质与着色</h2>
       <p>节点画在 <a href="catalog.html#nodes-shader">nodes/shader</a>。视口由 <a href="catalog.html#eevee">EEVEE</a> 编译；F12 由 <a href="catalog.html#cycles">Cycles</a> 编译。两套后端，一套用户节点语义。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>视口显示</h2>
       <p><a href="catalog.html#editors-view3d">View3D</a> 选引擎：Workbench 看结构，EEVEE 看近似成片。不经过 Cycles kernel。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>F12 渲染</h2>
       <p><a href="catalog.html#editors-render">editors/render</a> → <a href="catalog.html#render">render</a> → 引擎。默认学习路径按 Cycles 记。视口像素管线到此停。</p>
     </section>
   </main>
+  </div>
   <footer class="wrap">雕刻、UV、权重本轮不建功能条。需要时再挂目录。</footer>
 </body>
 </html>

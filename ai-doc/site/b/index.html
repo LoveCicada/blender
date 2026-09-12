@@ -5,24 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>数据 · UI 与数据层 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>数据 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="index.html" class="is-active">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="../d/index.html">渲染</a>
-        <a href="../ui-data.html">UI–数据地图</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">数据</p>
       <h1>UI 怎样改到同一份数据</h1>
@@ -75,8 +90,9 @@
         <li><code>MESH_OT_subdivide</code> 结束后谁调用 <code>DEG_id_tag_update</code> 和 <code>WM_main_add_notifier</code>。</li>
       </ul>
     </section>
-    <p class="note" style="margin-top:1rem">本轮停在「数据变了、图脏了」。网格与修改器见 <a href="../c/index.html">建模</a>，像素见 <a href="../d/index.html">渲染</a>。</p>
+    <p class="note">本轮停在「数据变了、图脏了」。网格与修改器见 <a href="../c/index.html">建模</a>，像素见 <a href="../d/index.html">渲染</a>。</p>
   </main>
+  </div>
   <footer class="wrap">对照 5.03 alpha。权威目录仍是 <a href="../catalog.html">catalog.html</a>。</footer>
 </body>
 </html>

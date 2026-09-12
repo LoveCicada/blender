@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Depsgraph · 渲染 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>渲染 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="../c/index.html">建模</a>
         <a href="index.html" class="is-active">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#depsgraph">depsgraph</a></p>
       <h1>没有叫 DEG_evaluate 的入口</h1>
@@ -35,19 +51,42 @@
       <a href="cycles.html">F12 / Cycles</a>
     </p>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>改一个顶点不该重算全世界。depsgraph 把「谁依赖谁」编成图：标脏一块几何，只重跑相关操作。视口和 F12 需要两张图，因为修改器级别和可见性不一样。</p>
+    </section>
+    <section class="panel">
       <h2>图里有什么</h2>
       <p>ID 节点 → 组件（TRANSFORM / GEOMETRY / SHADING …）→ 操作节点，边是 <code>Relation</code>。构建：<code>DepsgraphNodeBuilder</code> + <code>DepsgraphRelationBuilder</code>。视口 <code>DEG_graph_build_from_view_layer</code>；F12 <code>DEG_graph_build_for_render_pipeline</code>。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>Copy-on-eval</h2>
       <p>原始 Main 里的 Object/Mesh 尽量不动。求值写副本（<code>deg_eval_copy_on_write.cc</code>）。查询：<code>DEG_get_evaluated</code> / <code>DEG_get_original_id</code>。网格：<code>BKE_object_get_evaluated_mesh</code>（可经 <code>geometry_set_eval</code>，再 <code>BKE_mesh_wrapper_ensure_subdivision</code>）。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>两种模式</h2>
       <p><code>DAG_EVAL_VIEWPORT</code>：Realtime 修改器、hide-viewport。场景里那张图由 <code>BKE_scene_ensure_depsgraph</code> 保证。<code>DAG_EVAL_RENDER</code>：Render 修改器、hide-render；F12 在 <code>render_init_depsgraph</code> 另建。这就是<a href="../c/modifiers.html">修改器</a>图里上下分叉的来源。</p>
     </section>
-    <p class="later">内部阶段：COPY_ON_EVAL → 可见性 → 并行跑 <code>OperationNode::evaluate</code>（<code>deg_eval.cc</code>）。</p>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>API</th><th>它做</th><th>它不做</th></tr></thead>
+          <tbody>
+            <tr><td><code>DEG_id_tag_update</code></td><td>标脏，等下一轮求值</td><td>立刻跑修改器、画像素</td></tr>
+            <tr><td><code>DEG_evaluate_on_refresh</code></td><td>数据变了就重跑脏节点</td><td>不叫 <code>DEG_evaluate</code></td></tr>
+            <tr><td><code>DEG_evaluate_on_framechange</code></td><td>换帧求值</td><td>不替代 F12 另建的渲染图</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>求值写副本（copy-on-eval）。原始 Main 里的 Object/Mesh 尽量不动。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>没有名为 <code>DEG_evaluate</code> 的公开入口。对外是 <code>on_refresh</code> / <code>on_framechange</code>。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>DEG_get_evaluated</code> · <code>BKE_object_get_evaluated_mesh</code> · <a href="../qa/render.html#q151">Q151</a> · <a href="../qa/render.html#q153">Q153</a></p></section>
+    </div>
+    <p class="later">内部阶段：COPY_ON_EVAL → 可见性 → 并行跑 <code>OperationNode::evaluate</code>（<code>deg_eval.cc</code>）。邻居图：<a href="../../archify/blender-runtime.html">Archify</a>。</p>
   </main>
+  </div>
   <footer class="wrap"><a href="draw.html">下一页：Draw</a></footer>
 </body>
 </html>

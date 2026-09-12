@@ -5,34 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>UI 与数据 · Blender 学习站</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="index.html">总览</a>
-        <a href="catalog.html">目录</a>
+        <a href="catalog.html" class="is-active">目录</a>
         <a href="qa/index.html">问答</a>
-        <a href="../archify/blender-runtime.html">Archify</a>
-        <a href="modules.html">模块</a>
-        <a href="responsibilities.html">职责</a>
-        <a href="features.html">功能</a>
         <a href="b/index.html">数据</a>
         <a href="c/index.html">建模</a>
         <a href="d/index.html">渲染</a>
-        <a href="ui-data.html" class="is-active">UI–数据</a>
-        <a href="render.html">渲染</a>
+        <a href="../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
 
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">投影 4 · 地图级</p>
       <h1>UI 怎样碰到数据</h1>
       <p class="lede">先记这条链。函数级走读：<a href="b/index.html">数据</a>（DNA、RNA、Python UI、Operator、更新与撤销）。</p>
     </section>
+    <p class="subnav">
+      <a href="catalog.html">目录</a>
+      <a href="modules.html">模块</a>
+      <a href="responsibilities.html">职责</a>
+      <a href="features.html">功能</a>
+      <a href="ui-data.html" class="is-active">UI–数据</a>
+      <a href="render.html">渲染地图</a>
+    </p>
 
     <figure class="figure">
       <img src="diagrams/flow.svg" alt="从 UI RNA 到 BKE 再经 Depsgraph">
@@ -62,13 +81,14 @@
       </ol>
     </section>
 
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>和建模的衔接</h2>
       <p>编辑模式多一个台阶：Operator → <a href="catalog.html#bmesh">BMesh</a> → 写回 <a href="catalog.html#blenkernel">Mesh</a>。物体模式没有这一步。细节归<a href="c/index.html">建模</a>。</p>
     </section>
 
     <p class="later">深讲已写：<a href="b/dna.html">DNA</a> · <a href="b/rna.html">RNA</a> · <a href="b/python-ui.html">Python UI</a> · <a href="b/operator.html">Operator</a> · <a href="b/update.html">更新与撤销</a>。</p>
   </main>
+  </div>
   <footer class="wrap">地图页。不要在这里展开每个面板文件。</footer>
 </body>
 </html>

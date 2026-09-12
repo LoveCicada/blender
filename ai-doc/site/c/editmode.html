@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>编辑模式 · 建模 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="index.html" class="is-active">建模</a>
         <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#editors-object">editors/object</a></p>
       <h1>Tab 做了一次格式转换</h1>
@@ -39,6 +55,10 @@
       <figcaption>转换函数在 editors，真正拷数据在 bmesh convert。</figcaption>
     </figure>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>用户按 Tab 只觉得「能改点了」。源码必须做一次格式转换：数组变成半边，模式标志换成 <code>OB_MODE_EDIT</code>。中间的挤出、溶解只改 <code>em-&gt;bm</code>，不每步写回 DNA。</p>
+    </section>
+    <section class="panel">
       <h2>进入</h2>
       <pre class="src">editmode_toggle_exec
   editmode_enter_ex
@@ -49,7 +69,7 @@
       BKE_editmesh_looptris_and_normals_calc
     DEG_id_tag_update(&amp;ob->id, ID_RECALC_GEOMETRY)</pre>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>离开</h2>
       <pre class="src">editmode_exit_ex -> editmode_load_free_ex
   EDBM_mesh_load_ex(bmain, obedit, free_data)
@@ -58,11 +78,30 @@
   edit_mesh.reset()</pre>
       <p>求值过程中还有 <code>BM_mesh_bm_to_me_for_eval</code>，给修改器一条临时数组，不代表用户已退出编辑。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>留在编辑模式</h2>
       <p>工具改 <code>em-&gt;bm</code>，然后 <code>EDBM_update</code>（<a href="../b/update.html">更新</a>已写）：标 <code>ID_RECALC_GEOMETRY</code> + 重算法线/looptris。<code>needs_flush_to_id</code> 表示 DNA 过期。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>函数</th><th>写谁</th><th>不代表什么</th></tr></thead>
+          <tbody>
+            <tr><td><code>BM_mesh_bm_from_me</code></td><td>新建半边，挂 <code>edit_mesh</code></td><td>用户已经挤出过</td></tr>
+            <tr><td><code>BM_mesh_bm_to_me</code></td><td>半边写回 DNA 数组</td><td>修改器已经 Apply</td></tr>
+            <tr><td><code>BM_mesh_bm_to_me_for_eval</code></td><td>给修改器一条临时数组</td><td>用户已退出编辑</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>转换函数在 editors，真正拷数据在 bmesh convert。模式标志在 <code>Object.mode</code>，不在 bmesh 库里。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>Tab「看起来没变」不等于没转换。屏幕仍是同一物体，存储格式已经换了。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>OBJECT_OT_editmode_toggle</code> · <code>EDBM_mesh_make</code> · <a href="../qa/features.html#q053">Q053</a> · <a href="../../archify/blender-mainpath.html">主路径图</a></p></section>
+    </div>
   </main>
+  </div>
   <footer class="wrap"><a href="ops.html">下一页：挤出与 BMO</a></footer>
 </body>
 </html>

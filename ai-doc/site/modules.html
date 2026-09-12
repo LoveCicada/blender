@@ -5,34 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>按模块 · Blender 学习站</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="index.html">Blender 学习站<small>地图 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="index.html">总览</a>
-        <a href="catalog.html">目录</a>
+        <a href="catalog.html" class="is-active">目录</a>
         <a href="qa/index.html">问答</a>
-        <a href="../archify/blender-runtime.html">Archify</a>
-        <a href="modules.html" class="is-active">模块</a>
-        <a href="responsibilities.html">职责</a>
-        <a href="features.html">功能</a>
         <a href="b/index.html">数据</a>
         <a href="c/index.html">建模</a>
         <a href="d/index.html">渲染</a>
-        <a href="ui-data.html">UI–数据</a>
-        <a href="render.html">渲染</a>
+        <a href="../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
 
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker">投影 1</p>
       <h1>按源码模块</h1>
       <p class="lede">分组对齐 <code>source/blender/CMakeLists.txt</code> 与 <code>intern/cycles</code>。点名称进<a href="catalog.html">目录</a>看职责和邻居。</p>
     </section>
+    <p class="subnav">
+      <a href="catalog.html">目录</a>
+      <a href="modules.html" class="is-active">模块</a>
+      <a href="responsibilities.html">职责</a>
+      <a href="features.html">功能</a>
+      <a href="ui-data.html">UI–数据</a>
+      <a href="render.html">渲染地图</a>
+    </p>
 
     <figure class="figure">
       <img src="diagrams/neighbors.svg" alt="从 mesh 编辑器经 BMesh、Mesh、修改器到 Draw 或 Cycles">
@@ -48,7 +67,7 @@
         <li><a href="catalog.html#blenloader">blenloader</a> — <code>.blend</code> 读写</li>
       </ul>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>网格与几何</h2>
       <ul>
         <li><a href="catalog.html#bmesh">bmesh</a> — 编辑态拓扑</li>
@@ -56,7 +75,7 @@
         <li><a href="catalog.html#modifiers">modifiers</a> — 修改器实现</li>
       </ul>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>命令与界面</h2>
       <ul>
         <li><a href="catalog.html#windowmanager">windowmanager</a></li>
@@ -65,7 +84,7 @@
         <li><a href="catalog.html#python-ui">scripts/startup/bl_ui</a></li>
       </ul>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>求值、绘制、渲染</h2>
       <ul>
         <li><a href="catalog.html#depsgraph">depsgraph</a></li>
@@ -74,8 +93,9 @@
         <li><a href="catalog.html#nodes-shader">nodes/shader</a></li>
       </ul>
     </section>
-    <p class="note" style="margin-top:1rem">弱写：compositor、sequencer、io、GHOST、雕刻细目录。它们在 CMake 里存在，本轮地图不建条目。</p>
+    <p class="note">弱写：compositor、sequencer、io、GHOST、雕刻细目录。它们在 CMake 里存在，本轮地图不建条目。</p>
   </main>
+  </div>
   <footer class="wrap">模块树会随官方 CMake 变；条目语义以目录页为准。</footer>
 </body>
 </html>

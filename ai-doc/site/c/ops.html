@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BMO · 建模 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="index.html" class="is-active">建模</a>
         <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#editors-mesh">editors/mesh</a></p>
       <h1>WM Operator 下面还有一层 BMO</h1>
@@ -35,10 +51,14 @@
       <a href="modifiers.html">修改器</a>
     </p>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>WM Operator 是用户命令（可撤销、可快捷键）。拓扑原语需要另一张表：字符串名 + 槽位，Python 和其它编辑器也能调。editors/mesh 只负责 poll、填选择、收尾 <code>EDBM_update</code>。</p>
+    </section>
+    <section class="panel">
       <h2>表在哪</h2>
       <p><code>bmesh/intern/bmesh_opdefines.cc</code> 的 <code>bmo_opdefines[]</code>。调度：<code>BMO_op_init</code> / <code>BMO_op_exec</code>（<code>bmesh_operators.cc</code>）。编辑器常用 <code>EDBM_op_callf(em, op, "dissolve_verts verts=%hv ...", BM_ELEM_SELECT)</code>，把当前选择填进槽。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>挤出</h2>
       <pre class="src">MESH_OT_extrude_region          /* editmesh_extrude.cc */
   edbm_extrude_ex
@@ -48,12 +68,31 @@
   EDBM_update</pre>
       <p>用户菜单里常见宏 <code>MESH_OT_extrude_region_move</code>：挤出再接变换（<a href="../catalog.html#editors-transform">transform</a> modal）。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>溶解</h2>
       <p><code>"dissolve_verts"</code> → <code>bmo_dissolve_verts_exec</code>（<code>bmo_dissolve.cc</code>）→ <code>MESH_OT_dissolve_verts</code>（<code>editmesh_tools.cc</code>）。和细分一样：poll 仍是 <code>ED_operator_editmesh</code>。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>它写什么</th><th>它不写什么</th></tr></thead>
+          <tbody>
+            <tr><td>WM Operator</td><td>快捷键、undo、<code>bContext</code></td><td>半边重连算法</td></tr>
+            <tr><td>BMO</td><td>槽位里的选择 → 改 <code>BMesh</code></td><td>不听 keymap</td></tr>
+            <tr><td><code>EDBM_update</code></td><td>标脏 + 重算法线/looptris</td><td>不立刻写回 DNA</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>BMO 表放在 bmesh，不放 editors/mesh。用户命令和拓扑原语可以分开复用。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>细分有时直接 <code>BM_mesh_esubdivide</code>，挤出走 BMO。两条都合法，不是混乱。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>BMO_op_exec</code> · <code>edbm_extrude_ex</code> · <a href="../qa/modules.html#q020">Q020</a> · <a href="../qa/features.html#q064">Q064</a></p></section>
+    </div>
     <p class="later">不列完整 BMO 表。选择历史、自动合并留给以后按需补。</p>
   </main>
+  </div>
   <footer class="wrap"><a href="modifiers.html">下一页：修改器</a></footer>
 </body>
 </html>

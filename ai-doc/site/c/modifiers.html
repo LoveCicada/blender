@@ -5,23 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>修改器 · 建模 · Blender 学习站</title>
   <link rel="stylesheet" href="../styles.css">
+  <script src="../site.js" defer></script>
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <a class="brand" href="../index.html">Blender 学习站<small>建模 · 非官方</small></a>
-      <nav>
+            <nav>
         <a href="../index.html">总览</a>
         <a href="../catalog.html">目录</a>
         <a href="../qa/index.html">问答</a>
-        <a href="../../archify/blender-runtime.html">Archify</a>
         <a href="../b/index.html">数据</a>
         <a href="index.html" class="is-active">建模</a>
         <a href="../d/index.html">渲染</a>
+        <a href="../../archify/blender-runtime.html">Archify</a>
       </nav>
+      <div class="chrome">
+        <button type="button" class="theme-toggle" data-theme-toggle>深色</button>
+        <div class="search">
+          <input type="search" data-search placeholder="搜索笔记…" aria-label="搜索笔记">
+          <div class="search-results" data-search-results hidden></div>
+        </div>
+      </div>
     </div>
+    <div class="wrap chapters" data-chapters></div>
   </header>
-  <main class="wrap">
+  <div class="reader wrap">
+    <aside class="toc-side">
+      <details class="toc-box" open>
+        <summary>本页</summary>
+        <nav class="page-toc" data-page-toc></nav>
+      </details>
+    </aside>
+    <main class="content">
     <section class="hero">
       <p class="kicker"><a href="../catalog.html#modifiers">modifiers</a></p>
       <h1>栈在物体上，算在求值时</h1>
@@ -39,11 +55,15 @@
       <figcaption>同一套 <code>mesh_calc_modifiers</code>。差别是 <code>eModifierMode_Realtime</code> 还是 <code>Render</code>，以及细分的视口/渲染级别。</figcaption>
     </figure>
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>用户要非破坏地叠变形：基网格进文件，预览在视口，F12 可以用另一套级别。点「添加修改器」只往物体链表塞参数。真正变形发生在 depsgraph 求值，写的是副本。</p>
+    </section>
+    <section class="panel">
       <h2>注册</h2>
       <p><code>ModifierTypeInfo</code>（<code>BKE_modifier.hh</code>）：<code>modify_mesh</code> / <code>modify_geometry_set</code> / <code>deform_verts</code>。<code>modifiers/intern/MOD_util.cc</code> 的 <code>modifier_type_init</code> 填表；启动 <code>BKE_modifier_init</code>。查找：<code>BKE_modifier_get_info</code>。</p>
       <p>例子：<code>modifierType_Subsurf</code>（<code>MOD_subsurf.cc</code>，可开编辑模式）、<code>modifierType_Mirror</code>（<code>MOD_mirror.cc</code> 的 <code>mirrorModifier__doMirror</code>）。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>求值链</h2>
       <pre class="src">GEOMETRY_EVAL -> BKE_object_eval_uber_data
   BKE_object_handle_data_update
@@ -54,16 +74,35 @@
   BKE_object_eval_assign_data / geometry_set_eval</pre>
       <p>编辑模式先 <code>BKE_mesh_wrapper_from_editmesh</code>。Cage / 最终：<code>BKE_object_get_editmesh_eval_cage</code> 与 <code>_final</code>。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>Apply 不是求值</h2>
       <p><code>OBJECT_OT_modifier_apply</code>（<code>object_modifier.cc</code>）把当前求值结果烤进<strong>原始</strong> Mesh（<code>BKE_mesh_nomain_to_mesh</code>）并删掉该修改器。编辑模式里不能 Apply。求值结果在下次标脏后会重算，不写回文件里的基网格。</p>
     </section>
-    <section class="panel" style="margin-top:0.9rem">
+    <section class="panel">
       <h2>geometry / 几何节点</h2>
       <p><code>source/blender/geometry/</code> 是无状态算法库。几何节点是修改器 <code>modifierType_Nodes</code>（<code>MOD_nodes.cc</code>），<code>modify_geometry_set</code> 跑节点树。它不替换 BMesh 编辑。</p>
     </section>
-    <p class="later">下一轮 D 从这份 <code>geometry_set_eval</code> 接着画或送给 Cycles。</p>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>动作</th><th>写谁</th><th>不写谁</th></tr></thead>
+          <tbody>
+            <tr><td>添加修改器</td><td><code>Object.modifiers</code> 链表</td><td>基网格顶点</td></tr>
+            <tr><td>求值</td><td>副本 / <code>geometry_set_eval</code></td><td>文件里的原 Mesh</td></tr>
+            <tr><td>Apply</td><td>烤进原始 Mesh 并删该项</td><td>编辑模式里的 BMesh</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>同一套 <code>mesh_calc_modifiers</code>，用 <code>eModifierMode_Realtime</code> 与 <code>Render</code> 分视口和 F12。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>视口里带着细分预览，不等于已经 Apply。文件里的基网格可以仍是细分前的。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>BKE_object_eval_uber_data</code> · <code>OBJECT_OT_modifier_apply</code> · <a href="../qa/features.html#q077">Q077</a> · <a href="../qa/features.html#q079">Q079</a></p></section>
+    </div>
+    <p class="later">渲染章从这份 <code>geometry_set_eval</code> 接着画或送给 Cycles。</p>
   </main>
+  </div>
   <footer class="wrap"><a href="../d/index.html">下一章：渲染</a></footer>
 </body>
 </html>
