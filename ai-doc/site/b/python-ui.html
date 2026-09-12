@@ -68,11 +68,12 @@
     def poll(cls, context):
         return context.mesh and (context.engine in cls.COMPAT_ENGINES)
 
-class DATA_PT_texture_space(MeshButtonsPanel, Panel):
+class DATA_PT_remesh(MeshButtonsPanel, Panel):
     def draw(self, context):
         mesh = context.mesh
-        layout.prop(mesh, "use_auto_texspace")
-        # ...</pre>
+        col.prop(mesh, "remesh_voxel_size")      # 链 A：写 RNA
+        col.operator("object.voxel_remesh")      # 链 B：提交 Operator</pre>
+      <p>同一面板里两条出口并排：数字走属性，按钮走命令。体素尺寸还可带 <code>PROP_NO_DEG_UPDATE</code>，等你按 Remesh 再算。</p>
       <p><code>context.mesh</code> 不是 Context 上的静态 RNA 字段。属性编辑器 <code>editors/space_buttons/buttons_context.cc</code> 的 <code>buttons_context()</code> 沿 Scene → Object → <code>ob-&gt;data</code> 填 <code>"mesh"</code>。C 侧 <code>CTX_data_pointer_get(C, "mesh")</code> / <code>ED_mesh_context()</code>。</p>
     </section>
 

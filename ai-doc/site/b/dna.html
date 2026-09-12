@@ -86,6 +86,14 @@
         <li>字段没变就 <code>memcpy</code>；变了就 <code>DNA_struct_reconstruct</code> 按成员拷（增删改名靠 <code>dna_rename_defs.h</code>）。</li>
       </ol>
       <p>所以 DNA 不是「游戏场景树」，是「可版本对齐的结构体数据库」。加载结果是 <code>Main</code> 里的 ID 链表，见 <a href="../catalog.html#blenloader">blenloader</a>。</p>
+      <pre class="src">/* dna_genfile.cc */
+DNA_sdna_from_data(data, ...)     /* 解码文件或当前进程的 SDNA */
+DNA_struct_get_compareflags(...)
+DNA_struct_reconstruct(...)       /* 字段变了按成员拷 */
+
+/* blenloader */
+BLO_read_from_file → blo_read_file_internal
+  看到 DNA1 → read_file_dna → 上面两套对齐 */</pre>
     </section>
 
     <section class="panel">

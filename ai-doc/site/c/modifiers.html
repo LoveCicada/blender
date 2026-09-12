@@ -72,7 +72,11 @@
                : mesh_calc_modifiers
         BKE_modifier_modify_mesh -> mti->modify_mesh
   BKE_object_eval_assign_data / geometry_set_eval</pre>
-      <p>编辑模式先 <code>BKE_mesh_wrapper_from_editmesh</code>。Cage / 最终：<code>BKE_object_get_editmesh_eval_cage</code> 与 <code>_final</code>。</p>
+      <p><code>mesh_calc_modifiers</code>（<code>mesh_data_update.cc</code>）按 depsgraph 模式选栈：</p>
+      <pre class="src">const bool use_render = (DEG_get_mode(&amp;depsgraph) == DAG_EVAL_RENDER);
+const int required_mode = use_render ? eModifierMode_Render
+                                     : eModifierMode_Realtime;</pre>
+      <p>编辑模式先 <code>BKE_mesh_wrapper_from_editmesh</code>。Cage / 最终：<code>BKE_object_get_editmesh_eval_cage</code> 与 <code>_final</code>。<code>BKE_object_eval_uber_data</code> 只转给 <code>BKE_object_handle_data_update</code>，再标 batch cache 脏。</p>
     </section>
     <section class="panel">
       <h2>Apply 不是求值</h2>

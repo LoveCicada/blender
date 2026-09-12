@@ -42,7 +42,7 @@
     <section class="hero">
       <p class="kicker">投影 2</p>
       <h1>按职责分层</h1>
-      <p class="lede">同一份目录，按「这一层保证什么」切开。上层可以调用下层，不要绕过命令层直接改绘制缓存。</p>
+      <p class="lede">同一份目录，按「这一层保证什么」切开。上层可以调用下层，不要绕过命令层直接改绘制缓存。每层下面补了关键符号，方便对着源码跟。</p>
     </section>
     <p class="subnav">
       <a href="catalog.html">目录</a>
@@ -60,40 +60,58 @@
 
     <section class="panel">
       <h2>数据布局</h2>
-      <p><a href="catalog.html#makesdna">makesdna</a>、<a href="catalog.html#blenloader">blenloader</a>。保证文件里有稳定结构，不管按钮长什么样。</p>
+      <p><a href="catalog.html#makesdna">makesdna</a>、<a href="catalog.html#blenloader">blenloader</a>。保证文件里有稳定结构，不管按钮长什么样。<code>DNA_mesh_types.h</code> 的 <code>verts_num</code> 会进 <code>.blend</code>；<code>MeshRuntime</code> 明确不进。读文件：<code>BLO_read_from_file</code> → 对齐 <code>DNA1</code> → <code>DNA_struct_reconstruct</code>。</p>
     </section>
     <section class="panel">
       <h2>属性反射</h2>
-      <p><a href="catalog.html#makesrna">makesrna</a>。保证 UI 和 Python 用同一套名字读写字段。</p>
+      <p><a href="catalog.html#makesrna">makesrna</a>。保证 UI 和 Python 用同一套名字读写字段。<code>RNA_def_property_*_sdna</code> 绑 offset；写完走 <code>RNA_property_update</code>，默认 <code>DEG_id_tag_update</code>。禁止：面板里直接 <code>mesh-&gt;verts_num =</code>。</p>
     </section>
     <section class="panel">
       <h2>运行时对象</h2>
-      <p><a href="catalog.html#blenkernel">blenkernel</a>、<a href="catalog.html#geometry">geometry</a>。保证 ID 活着、Mesh 合法。</p>
+      <p><a href="catalog.html#blenkernel">blenkernel</a>、<a href="catalog.html#geometry">geometry</a>。保证 ID 活着、Mesh 合法。<code>Main</code> 是链表库，不是场景树。<code>Object.data</code> 指向 Mesh ID。</p>
     </section>
     <section class="panel">
       <h2>拓扑编辑</h2>
-      <p><a href="catalog.html#bmesh">bmesh</a>。保证编辑模式能高效改连接关系。</p>
+      <p><a href="catalog.html#bmesh">bmesh</a>。保证编辑模式能高效改连接关系。半边挂在 <code>MeshRuntime.edit_mesh</code>。挤出走 <code>BMO_op_exec(..., "extrude_face_region")</code>，不写 DNA 数组。</p>
     </section>
     <section class="panel">
       <h2>命令</h2>
-      <p><a href="catalog.html#windowmanager">windowmanager</a> 与 <a href="catalog.html#editors-mesh">editors/*</a>。保证一次用户动作可执行、可撤销、可重复。</p>
+      <p><a href="catalog.html#windowmanager">windowmanager</a> 与 <a href="catalog.html#editors-mesh">editors/*</a>。保证一次用户动作可执行、可撤销、可重复。<code>WM_main</code> 进循环前先 refresh depsgraph；handler 里 <code>wm_operator_invoke</code> → <code>poll</code> / <code>invoke</code> / <code>exec</code>。禁止：引擎回调里改拓扑。</p>
     </section>
     <section class="panel">
       <h2>UI</h2>
-      <p><a href="catalog.html#python-ui">bl_ui</a>、<a href="catalog.html#editors-view3d">space_view3d</a>。保证人能看见属性和视口工具，不负责算光。</p>
+      <p><a href="catalog.html#python-ui">bl_ui</a>、<a href="catalog.html#editors-view3d">space_view3d</a>。保证人能看见属性和视口工具，不负责算光。<code>layout.prop</code> 落到 <code>rna_uiItemR</code>（<code>rna_ui_api.cc</code>）。View3D 的 <code>art-&gt;draw = view3d_main_region_draw</code>。</p>
     </section>
     <section class="panel">
       <h2>依赖求值</h2>
-      <p><a href="catalog.html#depsgraph">depsgraph</a>、<a href="catalog.html#modifiers">modifiers</a>。保证绘制/渲染拿到「应用过修改器的世界」。</p>
+      <p><a href="catalog.html#depsgraph">depsgraph</a>、<a href="catalog.html#modifiers">modifiers</a>。保证绘制/渲染拿到「应用过修改器的世界」。几何操作节点跑 <code>BKE_object_eval_uber_data</code> → <code>mesh_calc_modifiers</code> / <code>editbmesh_calc_modifiers</code>。禁止：点「添加修改器」时立刻变形基网格。</p>
     </section>
     <section class="panel">
       <h2>视口绘制</h2>
-      <p><a href="catalog.html#draw">draw</a>、<a href="catalog.html#gpu">gpu</a>、<a href="catalog.html#eevee">EEVEE</a>、<a href="catalog.html#workbench">Workbench</a>。保证交互帧。</p>
+      <p><a href="catalog.html#draw">draw</a>、<a href="catalog.html#gpu">gpu</a>、<a href="catalog.html#eevee">EEVEE</a>、<a href="catalog.html#workbench">Workbench</a>。保证交互帧。<code>view3d_draw_view</code> 里 <code>CTX_data_expect_evaluated_depsgraph</code>，再 <code>DRW_draw_view</code>。overlay 不是 <code>RenderEngineType</code>。</p>
     </section>
     <section class="panel">
       <h2>离线渲染</h2>
-      <p><a href="catalog.html#render">render</a>、<a href="catalog.html#cycles">Cycles</a>。保证 F12 出图。与视口共享求值，不共享 DrawManager。</p>
+      <p><a href="catalog.html#render">render</a>、<a href="catalog.html#cycles">Cycles</a>。保证 F12 出图。与视口共享求值，不共享 Draw Manager。<code>RENDER_OT_render</code> → <code>RE_RenderFrame</code> → <code>RE_engine_render</code>。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层</th><th>保证</th><th>禁止绕过</th></tr></thead>
+          <tbody>
+            <tr><td>命令</td><td>可撤销的一次动作</td><td>draw 缓存里改顶点</td></tr>
+            <tr><td>求值</td><td>修改器已叠到副本</td><td>F12 直接读 <code>edit_mesh</code></td></tr>
+            <tr><td>视口</td><td>交互帧 + overlay</td><td>自己跑 <code>mesh_calc_modifiers</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>改顶点发生在命令 + 拓扑层（图上 4–5）。视口只看求值结果。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>「渲染」不是一层。视口是第 7 层，F12 是第 8 层，中间隔着求值。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>WM_main</code> · <code>BKE_object_eval_uber_data</code> · <code>DRW_draw_view</code> · <a href="qa/modules.html#q037">Q037</a></p></section>
+    </div>
   </main>
   </div>
   <footer class="wrap">着色节点同时服务视口与离线，见 <a href="catalog.html#nodes-shader">nodes/shader</a>。</footer>

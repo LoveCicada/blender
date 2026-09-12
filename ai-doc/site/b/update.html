@@ -88,7 +88,16 @@
       WM_main_add_notifier(NC_GEOM | ND_DATA, &amp;mesh->id)
   wm_operator_finished
     ED_undo_push_op             /* if OPTYPE_UNDO */</pre>
-      <p><code>EDBM_update</code> 还会按参数重算法线 / looptris，供编辑模式绘制。几何节点和修改器的「应用」发生在 depsgraph 求值，不是这个函数里——那是建模 / 渲染章。</p>
+      <p><code>EDBM_update</code>（<code>editmesh_utils.cc</code>）本身很短，职责拆得很清楚：</p>
+      <pre class="src">void EDBM_update(Mesh *mesh, const EDBMUpdate_Params *params)
+{
+  DEG_id_tag_update(&amp;mesh->id, ID_RECALC_GEOMETRY);
+  WM_main_add_notifier(NC_GEOM | ND_DATA, &amp;mesh->id);
+  if (params->calc_normals &amp;&amp; params->calc_looptris)
+    BKE_editmesh_looptris_and_normals_calc(em);
+  /* ... 只算其中一项时走 EDBM_mesh_normals_update / looptris_calc */
+}</pre>
+      <p>它<strong>不</strong>把半边写回 DNA，也<strong>不</strong>跑修改器。几何节点和修改器的「应用」发生在 depsgraph 求值——那是建模 / 渲染章。</p>
     </section>
 
     <section class="panel">

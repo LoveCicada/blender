@@ -61,6 +61,12 @@
     <section class="panel">
       <h2>Cycles 怎么接到场景</h2>
       <p>Python <code>CyclesRender</code>（<code>intern/cycles/blender/addon/__init__.py</code>，<code>bl_idname = 'CYCLES'</code>）→ <code>_cycles.render</code>。<code>BlenderSync::sync_data</code>（<code>intern/cycles/blender/sync.cpp</code>）从 depsgraph 迭代求值物体；网格 <code>object_to_mesh</code>（<code>util.h</code>）。</p>
+      <pre class="src">RENDER_OT_render
+  RE_RenderFrame
+    render_init_depsgraph          /* DAG_EVAL_RENDER */
+    RE_engine_render
+      CyclesRender / _cycles.render
+        BlenderSync::sync_data</pre>
       <ul>
         <li><code>session/</code>：采样、分块、缓冲</li>
         <li><code>scene/</code>：Cycles 自己的 Object / Shader / Integrator 节点</li>

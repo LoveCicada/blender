@@ -42,7 +42,7 @@
     <section class="hero">
       <p class="kicker">投影 4 · 地图级</p>
       <h1>UI 怎样碰到数据</h1>
-      <p class="lede">先记这条链。函数级走读：<a href="b/index.html">数据</a>（DNA、RNA、Python UI、Operator、更新与撤销）。</p>
+      <p class="lede">UI 碰到数据只有两条入口：拖属性，或跑 Operator。下面用函数把两条链跟完。更细的走读在<a href="b/index.html">数据</a>。</p>
     </section>
     <p class="subnav">
       <a href="catalog.html">目录</a>
@@ -73,20 +73,61 @@
     </p>
 
     <section class="panel">
-      <h2>记三件事就够</h2>
-      <ol>
-        <li>面板上的数字几乎都是 RNA 属性，绑定 DNA 字段或 getter/setter，不是另一份平行数据。</li>
-        <li>菜单和快捷键指向 <code>wmOperatorType</code>（<code>WM_operatortype_append</code>）。真正改网格的是 editors 里的 exec，不是 <code>bl_ui</code>。</li>
-        <li>改完要让别人知道：notifier / depsgraph 标脏。视口不会去轮询每个顶点。</li>
-      </ol>
-    </section>
+      <h2>链 A：拖属性</h2>
+      <p>面板 <code>layout.prop(mesh, "remesh_voxel_size")</code> 不是把数字存进 Python。它点名 RNA 属性：</p>
+      <pre class="src">/* scripts/startup/bl_ui → C */
+rna_uiItemR(layout, ptr, "remesh_voxel_size", ...)   /* rna_ui_api.cc */
+  RNA_struct_find_property
+  uiItemFullR / 控件绑定 PointerRNA
 
+/* 用户改数字 */
+RNA_property_*_set
+  按 SDNA offset 写 Mesh.remesh_voxel_size
+RNA_property_update
+  prop->update 或默认 DEG_id_tag_update
+  WM_msg_publish_rna / WM_main_add_notifier</pre>
+      <p>所以面板上的数字几乎都是 RNA 属性，绑定 DNA 字段或 getter/setter，不是另一份平行数据。</p>
+    </section>
+    <section class="panel">
+      <h2>链 B：跑 Operator</h2>
+      <p>菜单和快捷键指向 <code>wmOperatorType</code>（<code>WM_operatortype_append</code>）。真正改网格的是 editors 里的 <code>exec</code>，不是 <code>bl_ui</code>。</p>
+      <pre class="src">WM_main
+  wm_event_do_refresh_wm_and_depsgraph   /* 先求值再跑命令 */
+  wm_window_events_process
+  wm_event_do_handlers
+    wm_operator_invoke
+      poll → invoke / exec
+  wm_event_do_notifiers
+  wm_draw_update</pre>
+      <p>Python <code>bpy.ops.mesh.subdivide()</code> 走 <code>WM_operator_call_py</code>，仍进同一套 invoke，不另开一条改网格的路。</p>
+    </section>
+    <section class="panel">
+      <h2>改完谁知道</h2>
+      <p>视口不会轮询每个顶点。<code>DEG_id_tag_update</code> 告诉 depsgraph 重算；<code>WM_main_add_notifier</code> 告诉编辑器重画。带 <code>OPTYPE_UNDO</code> 的命令再 <code>ED_undo_push_op</code>。</p>
+    </section>
     <section class="panel">
       <h2>和建模的衔接</h2>
-      <p>编辑模式多一个台阶：Operator → <a href="catalog.html#bmesh">BMesh</a> → 写回 <a href="catalog.html#blenkernel">Mesh</a>。物体模式没有这一步。细节归<a href="c/index.html">建模</a>。</p>
+      <p>编辑模式多一个台阶：Operator → <a href="catalog.html#bmesh">BMesh</a> → <code>EDBM_update</code> 标脏。写回 DNA 发生在退出或 flush。物体模式没有这一步。细节归<a href="c/index.html">建模</a>。</p>
     </section>
-
-    <p class="later">深讲已写：<a href="b/dna.html">DNA</a> · <a href="b/rna.html">RNA</a> · <a href="b/python-ui.html">Python UI</a> · <a href="b/operator.html">Operator</a> · <a href="b/update.html">更新与撤销</a>。</p>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>入口</th><th>写谁</th><th>不写谁</th></tr></thead>
+          <tbody>
+            <tr><td><code>layout.prop</code></td><td>DNA 字段 + update</td><td>BMesh 拓扑</td></tr>
+            <tr><td><code>layout.operator</code> / 快捷键</td><td>editors <code>exec</code></td><td><code>bl_ui</code> 自己的网格</td></tr>
+            <tr><td>notifier</td><td>编辑器重画</td><td>不跑修改器</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>两条入口，同一条尾巴：标脏 + 通知。Operator 额外推撤销。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>看到 <code>bl_ui</code> 就以为 UI 用 Python 改网格。它只点名属性和 Operator。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>rna_uiItemR</code> · <code>wm_operator_invoke</code> · <a href="b/update.html">更新</a> · <a href="qa/ui-data.html#q123">Q123</a></p></section>
+    </div>
+    <p class="later">深讲：<a href="b/dna.html">DNA</a> · <a href="b/rna.html">RNA</a> · <a href="b/python-ui.html">Python UI</a> · <a href="b/operator.html">Operator</a> · <a href="b/update.html">更新与撤销</a>。</p>
   </main>
   </div>
   <footer class="wrap">地图页。不要在这里展开每个面板文件。</footer>

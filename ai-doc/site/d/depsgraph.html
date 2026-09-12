@@ -57,6 +57,18 @@
     <section class="panel">
       <h2>图里有什么</h2>
       <p>ID 节点 → 组件（TRANSFORM / GEOMETRY / SHADING …）→ 操作节点，边是 <code>Relation</code>。构建：<code>DepsgraphNodeBuilder</code> + <code>DepsgraphRelationBuilder</code>。视口 <code>DEG_graph_build_from_view_layer</code>；F12 <code>DEG_graph_build_for_render_pipeline</code>。</p>
+      <pre class="src">void DEG_evaluate_on_refresh(Depsgraph *graph, ...)  /* depsgraph_eval.cc */
+{
+  /* 帧变了或 ID_RECALC_FRAME_CHANGE：tag_time_source */
+  deg_flush_updates_and_refresh(deg_graph, sync_writeback);
+}
+
+void DEG_evaluate_on_framechange(Depsgraph *graph, float frame, ...)
+{
+  deg_graph->tag_time_source();
+  deg_graph->frame = frame;
+  deg_flush_updates_and_refresh(deg_graph, sync_writeback);
+}</pre>
     </section>
     <section class="panel">
       <h2>Copy-on-eval</h2>

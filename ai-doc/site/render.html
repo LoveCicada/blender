@@ -42,7 +42,7 @@
     <section class="hero">
       <p class="kicker">投影 5 · 地图级</p>
       <h1>求值之后如何分道</h1>
-      <p class="lede">视口和 F12 <strong>共享</strong>求值结果，<strong>不共享</strong>像素后端。函数级走读：<a href="d/index.html">渲染</a>。</p>
+      <p class="lede">视口和 F12 <strong>共享</strong>求值结果，<strong>不共享</strong>像素后端。下面用符号把分道写清。函数级走读：<a href="d/index.html">渲染</a>。</p>
     </section>
     <p class="subnav">
       <a href="catalog.html">目录</a>
@@ -68,28 +68,57 @@
       <a href="catalog.html#cycles">Cycles</a>
     </p>
 
+    <section class="panel">
+      <h2>两张求值图</h2>
+      <p>视口图：<code>DEG_graph_build_from_view_layer</code>，模式 <code>DAG_EVAL_VIEWPORT</code>，Realtime 修改器、hide-viewport。F12 图：<code>DEG_graph_build_for_render_pipeline</code> / <code>render_init_depsgraph</code>，<code>DAG_EVAL_RENDER</code>。对外求值入口是 <code>DEG_evaluate_on_refresh</code> 和 <code>DEG_evaluate_on_framechange</code>，没有名为 <code>DEG_evaluate</code> 的函数。</p>
+    </section>
     <div class="grid-2">
       <section class="panel">
         <h2>视口</h2>
-        <p><a href="catalog.html#editors-view3d">View3D</a> 指定着色类型。<a href="catalog.html#draw">draw</a> 拉起 Workbench 或 EEVEE，经 <a href="catalog.html#gpu">gpu</a> 出帧。选中高亮、线框是 overlay 引擎，不是 Cycles。</p>
+        <pre class="src">view3d_main_region_draw
+  view3d_draw_view
+    CTX_data_expect_evaluated_depsgraph
+    DRW_draw_view
+      ED_view3d_engine_type(scene, v3d->shading.type)
+      enable_engines / sync / draw</pre>
+        <p>选中高亮、编辑线是 overlay，活在 <code>DRWViewData</code>，不是 <code>RenderEngineType</code>。</p>
       </section>
       <section class="panel">
         <h2>F12</h2>
-        <p><a href="catalog.html#editors-render">editors/render</a> 叫 <a href="catalog.html#render">render</a>。引擎若是 Cycles，走 <code>intern/cycles</code> 的 sync → BVH → integrator → kernel。结果进图像缓冲，不是 DrawManager 的 framebuffer。</p>
+        <pre class="src">RENDER_OT_render
+  RE_RenderFrame
+    RE_engine_render
+      RE_engines_find(scene.r.engine)</pre>
+        <p>引擎若是 Cycles：<code>BlenderSync::sync_data</code> → 求值物体 → kernel。结果进图像缓冲，不是 Draw Manager 的 framebuffer。</p>
       </section>
     </div>
-
     <section class="panel">
       <h2>材质为什么两边都能用</h2>
-      <p>用户编辑的是同一份 <a href="catalog.html#nodes-shader">shader node tree</a>。EEVEE 把它编成 GPU shader；Cycles 编成自己的闭包/SVM。兼容是「语义尽量对齐」，不是同一份机器码。</p>
+      <p>用户编辑的是同一份 <a href="catalog.html#nodes-shader">shader node tree</a>。EEVEE：<code>GPU_material_from_nodetree</code>（<code>SHD_OUTPUT_EEVEE</code>）。Cycles：<code>intern/cycles/blender/shader.cpp</code> 的 <code>add_nodes</code>（<code>SHD_OUTPUT_CYCLES</code>）。兼容是语义对齐，不是同一份机器码。</p>
     </section>
-
     <section class="panel">
       <h2>和建模的关系</h2>
-      <p>渲染器看到的网格通常是 <em>求值后</em> 的：修改器已应用、实例已展开。编辑模式的 BMesh 不会直接丢进 kernel。所以改拓扑要先写回 Mesh 并标脏。</p>
+      <p>渲染器看到的网格通常是求值后的：修改器已按当前图的模式应用。编辑模式的 BMesh 不会直接丢进 kernel。改拓扑必须先 <code>EDBM_update</code> 标脏（退出时才 <code>BM_mesh_bm_to_me</code> 写回 DNA）。</p>
     </section>
-
-    <p class="later">深讲已写：<a href="d/index.html">渲染</a>。</p>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>路</th><th>求值模式</th><th>出像素</th></tr></thead>
+          <tbody>
+            <tr><td>视口</td><td><code>DAG_EVAL_VIEWPORT</code></td><td><code>DRW_draw_view</code></td></tr>
+            <tr><td>F12</td><td><code>DAG_EVAL_RENDER</code></td><td><code>RE_engine_render</code></td></tr>
+            <tr><td>Material 预览</td><td>视口图</td><td>常走 EEVEE（<code>RE_USE_EEVEE_VIEWPORT</code>）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>分道点在求值之后。上面交互帧，下面路径追踪或光栅 F12。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>视口里的 Cycles 预览常常仍是 EEVEE。Rendered + Cycles 才走 external engine。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>DEG_evaluate_on_refresh</code> · <code>DRW_draw_view</code> · <code>RE_engine_render</code> · <a href="qa/render.html#q151">Q151</a></p></section>
+    </div>
+    <p class="later">深讲：<a href="d/depsgraph.html">Depsgraph</a> · <a href="d/draw.html">Draw</a> · <a href="d/eevee.html">EEVEE</a> · <a href="d/cycles.html">Cycles</a>。</p>
   </main>
   </div>
   <footer class="wrap">Hydra / 外部引擎本轮只承认 <code>source/blender/render/hydra</code> 存在，不写。</footer>

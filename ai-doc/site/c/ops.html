@@ -66,7 +66,13 @@
     BMO_op_exec
       bmo_extrude_face_region_exec  /* bmo_extrude.cc */
   EDBM_update</pre>
-      <p>用户菜单里常见宏 <code>MESH_OT_extrude_region_move</code>：挤出再接变换（<a href="../catalog.html#editors-transform">transform</a> modal）。</p>
+      <p>用户菜单里常见宏 <code>MESH_OT_extrude_region_move</code>（<code>mesh_ops.cc</code> 的 <code>WM_operatortype_append_macro</code>）：挤出再接变换（<a href="../catalog.html#editors-transform">transform</a> modal）。<code>edbm_extrude_ex</code> 本体：</p>
+      <pre class="src">BMO_op_init(bm, &amp;extop, BMO_FLAG_DEFAULTS, "extrude_face_region");
+BMO_slot_buffer_from_enabled_hflag(..., "geom", htype, hflag);
+BMO_op_exec(bm, &amp;extop);
+BMO_ITER (ele, ..., "geom.out", ...)
+  BM_elem_select_set(bm, ele, true);
+BMO_op_finish(bm, &amp;extop);</pre>
     </section>
     <section class="panel">
       <h2>溶解</h2>

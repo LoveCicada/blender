@@ -42,7 +42,7 @@
     <section class="hero">
       <p class="kicker">投影 1</p>
       <h1>按源码模块</h1>
-      <p class="lede">分组对齐 <code>source/blender/CMakeLists.txt</code> 与 <code>intern/cycles</code>。点名称进<a href="catalog.html">目录</a>看职责和邻居。</p>
+      <p class="lede">分组对齐 <code>source/blender/CMakeLists.txt</code> 与 <code>intern/cycles</code>。CMake 切的是<strong>编译单元</strong>，不是用户菜单。点名称进<a href="catalog.html">目录</a>看职责和邻居。</p>
     </section>
     <p class="subnav">
       <a href="catalog.html">目录</a>
@@ -59,7 +59,29 @@
     </figure>
 
     <section class="panel">
+      <h2>它解决什么</h2>
+      <p>读源码时第一个问题是「这个目录编译成什么」。CMake 把 DNA、BKE、editors、draw、Cycles 拆开，是因为它们的生命周期不同：有的生成表，有的改拓扑，有的出像素。投影只解释这种切法，不另起子系统名单。</p>
+    </section>
+    <section class="panel">
+      <h2>一条邻居链（挤出之后谁接手）</h2>
+      <p>用户在编辑模式按 E。跨模块的顺序是固定的，不要从 <code>draw/</code> 或 <code>intern/cycles</code> 里找挤出：</p>
+      <pre class="src">editors/mesh/editmesh_extrude.cc
+  MESH_OT_extrude_region → edbm_extrude_ex
+    BMO_op_init(..., "extrude_face_region")   /* bmesh */
+    BMO_op_exec
+  EDBM_update                                  /* editors + BKE tag */
+    DEG_id_tag_update(&amp;mesh->id, ID_RECALC_GEOMETRY)
+blenkernel/intern/object_update.cc
+  BKE_object_eval_uber_data → mesh_calc_modifiers / editbmesh_calc_modifiers
+draw/intern/draw_context.cc
+  DRW_draw_view                                /* 视口 */
+/* 或 editors/render/render_internal.cc
+  RENDER_OT_render → RE_engine_render          /* F12 / Cycles */</pre>
+      <p><a href="catalog.html#editors-mesh">editors/mesh</a> 听快捷键；<a href="catalog.html#bmesh">bmesh</a> 改半边；<a href="catalog.html#blenkernel">blenkernel</a> 在求值时叠修改器；最后才分给 <a href="catalog.html#draw">draw</a> 或 <a href="catalog.html#cycles">Cycles</a>。</p>
+    </section>
+    <section class="panel">
       <h2>数据与文件</h2>
+      <p><code>source/blender/CMakeLists.txt</code> 先列一整份 <code>SRC_DNA_INC</code>（<code>DNA_mesh_types.h</code>、<code>DNA_object_types.h</code>…）。<a href="catalog.html#makesdna">makesdna</a> 在构建期扫这些头，编成当前进程的 SDNA。<a href="catalog.html#makesrna">makesrna</a> 另跑一遍定义表，给同一字段起对外名字。<a href="catalog.html#blenkernel">blenkernel</a> 是运行时对象（<code>Main</code> 里的 ID、合法 Mesh）。<a href="catalog.html#blenloader">blenloader</a> 读写 <code>.blend</code>，打开文件时用文件里的 <code>DNA1</code> 对齐旧布局。</p>
       <ul>
         <li><a href="catalog.html#makesdna">makesdna</a> — 结构布局</li>
         <li><a href="catalog.html#makesrna">makesrna</a> — 属性反射</li>
@@ -69,6 +91,7 @@
     </section>
     <section class="panel">
       <h2>网格与几何</h2>
+      <p>磁盘上的网格是数组 <code>Mesh</code>。编辑需要半边，所以 <a href="catalog.html#bmesh">bmesh</a> 单独成库，不写进 DNA。<a href="catalog.html#geometry">geometry</a> 是无状态算法（属性域、Geometry Set），给几何节点用，不提供挤出。<a href="catalog.html#modifiers">modifiers</a> 的 <code>modify_mesh</code> 只在 depsgraph 求值时跑，改的是副本。</p>
       <ul>
         <li><a href="catalog.html#bmesh">bmesh</a> — 编辑态拓扑</li>
         <li><a href="catalog.html#geometry">geometry</a> — 属性与几何求值</li>
@@ -77,8 +100,9 @@
     </section>
     <section class="panel">
       <h2>命令与界面</h2>
+      <p><a href="catalog.html#windowmanager">windowmanager</a> 的 <code>WM_main</code>（<code>wm.cc</code>）先 <code>wm_event_do_refresh_wm_and_depsgraph</code>，再收事件、跑 handler、notifier、绘制。editors 按空间拆：mesh 改拓扑，object 管模式，transform 管 G/R/S，View3D 画视口，render 触发 F12。<a href="catalog.html#python-ui">bl_ui</a> 只 <code>layout.prop</code> / <code>layout.operator</code>，不改顶点。</p>
       <ul>
-        <li><a href="catalog.html#windowmanager">windowmanager</a></li>
+        <li><a href="catalog.html#windowmanager">windowmanager</a> — <code>WM_main</code> 循环</li>
         <li><a href="catalog.html#editors-mesh">editors/mesh</a>、<a href="catalog.html#editors-object">object</a>、<a href="catalog.html#editors-transform">transform</a></li>
         <li><a href="catalog.html#editors-view3d">editors/space_view3d</a>、<a href="catalog.html#editors-render">editors/render</a></li>
         <li><a href="catalog.html#python-ui">scripts/startup/bl_ui</a></li>
@@ -86,6 +110,7 @@
     </section>
     <section class="panel">
       <h2>求值、绘制、渲染</h2>
+      <p><a href="catalog.html#depsgraph">depsgraph</a> 编「谁依赖谁」，对外入口是 <code>DEG_evaluate_on_refresh</code> / <code>on_framechange</code>。<a href="catalog.html#draw">draw</a> 假定图已经求过：<code>view3d_main_region_draw</code> → <code>view3d_draw_view</code> → <code>DRW_draw_view</code>。EEVEE / Workbench 住在 <code>draw/engines/</code>，因为它们吃同一套 Draw Manager。Cycles 在 <code>intern/</code>：经 <code>RE_engine_render</code> 接到 <a href="catalog.html#render">render</a>。同一份 <a href="catalog.html#nodes-shader">shader nodes</a> 编两次。</p>
       <ul>
         <li><a href="catalog.html#depsgraph">depsgraph</a></li>
         <li><a href="catalog.html#draw">draw</a> → <a href="catalog.html#eevee">eevee</a> / <a href="catalog.html#workbench">workbench</a> / <a href="catalog.html#gpu">gpu</a></li>
@@ -93,6 +118,25 @@
         <li><a href="catalog.html#nodes-shader">nodes/shader</a></li>
       </ul>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>模块</th><th>它写</th><th>它不写</th></tr></thead>
+          <tbody>
+            <tr><td>editors/mesh</td><td>用户命令、poll、<code>EDBM_update</code></td><td>半边重连算法（在 bmesh）</td></tr>
+            <tr><td>bmesh</td><td>BMO 与半边</td><td>keymap、F12 调度</td></tr>
+            <tr><td>modifiers</td><td>求值时变形副本</td><td>编辑模式的挤出</td></tr>
+            <tr><td>draw / Cycles</td><td>像素</td><td>拓扑</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>CMake 目录按生命周期切，不按用户菜单切。菜单在 <code>bl_ui</code>，算法在 C 模块。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>CMake 里有 compositor / io / sculpt，不等于本站目录条目。弱写的不建权威名字。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>WM_main</code> · <code>edbm_extrude_ex</code> · <code>BKE_object_eval_uber_data</code> · <a href="qa/modules.html#q013">Q013</a></p></section>
+    </div>
     <p class="note">弱写：compositor、sequencer、io、GHOST、雕刻细目录。它们在 CMake 里存在，本轮地图不建条目。</p>
   </main>
   </div>

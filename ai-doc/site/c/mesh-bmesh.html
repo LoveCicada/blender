@@ -74,6 +74,15 @@ std::shared_ptr&lt;BMEditMesh&gt; edit_mesh;
       <p>选择位 <code>BM_ELEM_SELECT</code>（<code>hflag</code> 第 0 位）。测试：<code>BM_elem_flag_test</code>；写入：<code>BM_elem_select_set</code>。网格上还有 <code>totvertsel</code> 等计数。</p>
     </section>
     <section class="panel">
+      <h2>数组怎么变成半边</h2>
+      <p>转换实现在 <code>bmesh/intern/bmesh_mesh_convert.cc</code> 的 <code>BM_mesh_bm_from_me</code>。进编辑模式不直接调它，而是 <code>EDBM_mesh_make_from_mesh</code> → <code>BKE_mesh_to_bmesh</code>：</p>
+      <pre class="src">BMesh *bm = BKE_mesh_to_bmesh(src_mesh, shapenr, add_key_index, &amp;create_params);
+mesh->runtime->edit_mesh = std::make_shared&lt;BMEditMesh&gt;();
+mesh->runtime->edit_mesh->bm = bm;
+mesh->runtime->edit_mesh->selectmode = select_mode;</pre>
+      <p>写回是 <code>BM_mesh_bm_to_me</code>。求值临时数组是 <code>BM_mesh_bm_to_me_for_eval</code>，不代表用户已退出。</p>
+    </section>
+    <section class="panel">
       <h2>和邻居的边界</h2>
       <div class="table-wrap">
         <table>

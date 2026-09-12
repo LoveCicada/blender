@@ -54,7 +54,7 @@
 
     <figure class="figure">
       <img src="../diagrams/b-wm-loop.svg" alt="WM_main 四步循环">
-      <figcaption><code>WM_main</code>（<code>windowmanager/intern/wm.cc</code>）。进循环前先 <code>wm_event_do_refresh_wm_and_depsgraph</code>，避免未求值就跑 Operator。</figcaption>
+      <figcaption><code>WM_main</code>（<code>windowmanager/intern/wm.cc</code>）。进循环前先 refresh，避免未求值就跑 Operator。</figcaption>
     </figure>
 
     <section class="panel">
@@ -86,6 +86,20 @@ EDBM_update(mesh, params)</pre>
       <p><code>ED_operator_editmesh</code>（<code>editors/screen/screen_ops.cc</code>）：<code>CTX_data_edit_object</code> 必须是带 <code>BMEditMesh</code> 的网格。Poll 失败则快捷键静默无效。</p>
     </section>
 
+    <section class="panel">
+      <h2>WM_main 一圈</h2>
+      <pre class="src">void WM_main(bContext *C)          /* wm.cc */
+{
+  wm_event_do_refresh_wm_and_depsgraph(C);
+  while (true) {
+    wm_window_events_process(C);
+    wm_event_do_handlers(C);
+    wm_event_do_notifiers(C);
+    wm_draw_update(C);
+  }
+}</pre>
+      <p>注释写明：Single refresh before handling events，确保 Operator 看到的是已求值的世界。</p>
+    </section>
     <section class="panel">
       <h2>调用路径</h2>
       <ol>

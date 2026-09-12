@@ -61,6 +61,10 @@
     <section class="panel">
       <h2>节点 → GPU</h2>
       <p><code>ShaderModule::material_shader_get</code> → <code>GPU_material_from_nodetree</code>（<code>gpu/intern/gpu_material.cc</code>，目标 <code>GPU_MAT_EEVEE</code>）。内部 <code>inline_shader_node_tree(SHD_OUTPUT_EEVEE)</code>，再 <code>ntreeGPUMaterialNodes</code> / <code>ntreeExecGPUNodes</code>（<code>nodes/shader/</code>）。</p>
+      <pre class="src">/* 视口一帧里 EEVEE 吃的是求值 Scene */
+eevee::Instance  ←  DEG_get_evaluated_scene / ViewLayer
+/* F12 仍是光栅 */
+eevee_render → DRW_render_to_image</pre>
     </section>
     <section class="panel">
       <h2>Workbench</h2>

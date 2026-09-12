@@ -42,7 +42,7 @@
     <section class="hero">
       <p class="kicker">投影 3</p>
       <h1>按用户功能</h1>
-      <p class="lede">从「我在软件里做什么」反查目录。着色块表示这条功能会碰到该模块；空白表示通常不走。</p>
+      <p class="lede">从「我在软件里做什么」反查目录，并补上函数栈。着色块表示这条功能会碰到该模块；空白表示通常不走。</p>
     </section>
     <p class="subnav">
       <a href="catalog.html">目录</a>
@@ -61,27 +61,64 @@
     <section class="panel">
       <h2>物体模式</h2>
       <p>选择物体、变换物体、进出编辑模式。<a href="catalog.html#editors-object">editors/object</a>、<a href="catalog.html#editors-transform">transform</a> 改 <a href="catalog.html#blenkernel">Object / BKE</a>，经 <a href="catalog.html#depsgraph">depsgraph</a> 更新 <a href="catalog.html#draw">draw</a>。不进 BMesh，除非进入编辑模式。</p>
+      <p>物体模式按 G：keymap 指向 transform modal，写回 <code>Object</code> 的位置/旋转/缩放，标 <code>ID_RECALC_TRANSFORM</code>。网格数组不动。</p>
+    </section>
+    <section class="panel">
+      <h2>Tab 进出编辑</h2>
+      <p>idname <code>OBJECT_OT_editmode_toggle</code>（<code>editors/object/object_edit.cc</code>）。进模式：</p>
+      <pre class="src">editmode_toggle_exec
+  editmode_enter_ex
+    ob->mode = OB_MODE_EDIT
+    EDBM_mesh_make(ob, selectmode, ...)     /* editmesh_utils.cc */
+      BKE_mesh_to_bmesh
+      mesh->runtime->edit_mesh = make_shared&lt;BMEditMesh&gt;()
+    BKE_editmesh_looptris_and_normals_calc
+    DEG_id_tag_update(&amp;ob->id, ID_RECALC_GEOMETRY)</pre>
+      <p>离开走 <code>EDBM_mesh_load_ex</code> → <code>BM_mesh_bm_to_me</code>。深讲：<a href="c/editmode.html">进出编辑模式</a>。</p>
     </section>
     <section class="panel">
       <h2>编辑模式改网格</h2>
-      <p>挤出、切割、点边面选择。<a href="catalog.html#editors-mesh">editors/mesh</a> 操作 <a href="catalog.html#bmesh">bmesh</a>，写回 Mesh，再求值、重画。深讲：<a href="c/index.html">建模</a>。</p>
+      <p>挤出、切割、点边面选择。<a href="catalog.html#editors-mesh">editors/mesh</a> 操作 <a href="catalog.html#bmesh">bmesh</a>。菜单常见宏 <code>MESH_OT_extrude_region_move</code>（<code>mesh_ops.cc</code> 里 <code>WM_operatortype_append_macro</code>）：先挤出再接变换。</p>
+      <pre class="src">MESH_OT_extrude_region          /* editmesh_extrude.cc */
+  edbm_extrude_ex
+    BMO_op_init(..., "extrude_face_region")
+    BMO_op_exec
+  /* 然后 EDBM_update 标脏 */</pre>
     </section>
     <section class="panel">
       <h2>修改器</h2>
-      <p>参数存在物体上（DNA + RNA 面板）。计算发生在 <a href="catalog.html#modifiers">modifiers</a> + <a href="catalog.html#depsgraph">depsgraph</a>。视口和 F12 都吃求值后的网格，所以 Cycles 列也是着色的。</p>
+      <p>点添加只往 <code>Object.modifiers</code> 塞 <code>ModifierData</code>。变形在下一轮 <code>BKE_object_eval_uber_data</code> → <code>mesh_calc_modifiers</code>。视口读 <code>eModifierMode_Realtime</code>，F12 读 <code>Render</code>。Apply 才是 <code>OBJECT_OT_modifier_apply</code>，编辑模式不能 Apply。</p>
     </section>
     <section class="panel">
       <h2>材质与着色</h2>
-      <p>节点画在 <a href="catalog.html#nodes-shader">nodes/shader</a>。视口由 <a href="catalog.html#eevee">EEVEE</a> 编译；F12 由 <a href="catalog.html#cycles">Cycles</a> 编译。两套后端，一套用户节点语义。</p>
+      <p>节点画在 <a href="catalog.html#nodes-shader">nodes/shader</a>。EEVEE：<code>GPU_material_from_nodetree</code>（<code>SHD_OUTPUT_EEVEE</code>）。Cycles：<code>add_nodes</code>（<code>SHD_OUTPUT_CYCLES</code>）。不是同一份机器码。</p>
     </section>
     <section class="panel">
       <h2>视口显示</h2>
-      <p><a href="catalog.html#editors-view3d">View3D</a> 选引擎：Workbench 看结构，EEVEE 看近似成片。不经过 Cycles kernel。</p>
+      <p><code>view3d_main_region_draw</code> → <code>view3d_draw_view</code> → <code>DRW_draw_view</code>。<code>ED_view3d_engine_type(scene, v3d-&gt;shading.type)</code>：Material 且引擎带 <code>RE_USE_EEVEE_VIEWPORT</code> 时改走 EEVEE。线框/Solid 走 Workbench。不经过 Cycles kernel。</p>
     </section>
     <section class="panel">
       <h2>F12 渲染</h2>
-      <p><a href="catalog.html#editors-render">editors/render</a> → <a href="catalog.html#render">render</a> → 引擎。默认学习路径按 Cycles 记。视口像素管线到此停。</p>
+      <p><code>RENDER_OT_render</code>（<code>render_internal.cc</code>）→ <code>RE_RenderFrame</code> → <code>RE_engine_render</code> → <code>RE_engines_find(scene.r.engine)</code>。默认学习路径按 Cycles 记：<code>BlenderSync::sync_data</code> 吃求值物体。视口像素管线到此停。</p>
     </section>
+    <section class="panel">
+      <h2>和邻居的边界</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>用户动作</th><th>进 BMesh？</th><th>出像素的路</th></tr></thead>
+          <tbody>
+            <tr><td>物体模式 G</td><td>否</td><td>视口重画物体矩阵</td></tr>
+            <tr><td>编辑模式 E</td><td>是</td><td>标脏后视口吃求值网格</td></tr>
+            <tr><td>F12</td><td>否（先求值）</td><td><code>RE_engine_render</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <div class="callouts">
+      <section class="callout choice"><h3>设计选择</h3><p>同一套 G：物体模式写 Object，编辑模式写 BMesh 顶点。</p></section>
+      <section class="callout myth"><h3>常见误解</h3><p>视口带着细分预览 ≠ 已经 Apply。基网格顶点数可以仍是旧的。</p></section>
+      <section class="callout symbol"><h3>源码符号</h3><p><code>OBJECT_OT_editmode_toggle</code> · <code>edbm_extrude_ex</code> · <code>RENDER_OT_render</code> · <a href="qa/features.html#q053">Q053</a></p></section>
+    </div>
   </main>
   </div>
   <footer class="wrap">雕刻、UV、权重本轮不建功能条。需要时再挂目录。</footer>

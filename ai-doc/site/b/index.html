@@ -87,7 +87,8 @@
       <ul>
         <li><code>context.mesh.remesh_voxel_size = 0.1</code> 为什么会写到 <code>Mesh</code> 结构体，而不是 Python 自己的字典。</li>
         <li>为什么 <code>bl_ui</code> 里几乎看不到改顶点的代码。</li>
-        <li><code>MESH_OT_subdivide</code> 结束后谁调用 <code>DEG_id_tag_update</code> 和 <code>WM_main_add_notifier</code>。</li>
+        <li><code>MESH_OT_subdivide</code> 结束后谁调用 <code>DEG_id_tag_update</code> 和 <code>WM_main_add_notifier</code>（答案在 <code>EDBM_update</code>）。</li>
+        <li><code>WM_main</code> 为什么先 refresh depsgraph 再处理事件。</li>
       </ul>
     </section>
     <p class="note">本轮停在「数据变了、图脏了」。网格与修改器见 <a href="../c/index.html">建模</a>，像素见 <a href="../d/index.html">渲染</a>。</p>

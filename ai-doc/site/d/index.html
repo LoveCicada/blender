@@ -66,6 +66,7 @@
         <li>对外求值入口是 <code>DEG_evaluate_on_refresh</code> / <code>on_framechange</code>，没有 <code>DEG_evaluate</code>。</li>
         <li>overlay 不是 <code>RenderEngineType</code>，选择轮廓不在引擎里。</li>
         <li>同一份着色节点：EEVEE 编译 GPU 材质，Cycles 走 <code>add_nodes</code>。</li>
+        <li><code>view3d_draw_view</code> 里为什么先 <code>CTX_data_expect_evaluated_depsgraph</code> 再 <code>DRW_draw_view</code>。</li>
       </ul>
     </section>
   </main>

@@ -56,11 +56,13 @@
     </section>
     <section class="panel">
       <h2>一帧</h2>
-      <pre class="src">DRW_draw_view
-  ED_view3d_engine_type(scene, v3d->shading.type)
-  enable_engines
-  engines_init_and_sync     /* foreach DEG_OBJECT_ITER */
-  engines_draw_scene</pre>
+      <pre class="src">view3d_main_region_draw          /* view3d_draw.cc */
+  view3d_draw_view
+    ED_view3d_draw_setup_view(..., CTX_data_expect_evaluated_depsgraph(C), ...)
+    DRW_draw_view                /* draw_context.cc */
+      ED_view3d_engine_type(scene, v3d->shading.type)
+      /* Material + RE_USE_EEVEE_VIEWPORT → 改找 BLENDER_EEVEE */
+      drw_draw_render_loop_3d</pre>
       <p>引擎接口 <code>DrawEngine</code>（<code>DRW_render.hh</code>）：<code>init / begin_sync / object_sync / end_sync / draw</code>。物体网格批：<code>BKE_object_get_evaluated_mesh*</code> + <code>draw_cache_impl_mesh.cc</code>。</p>
     </section>
     <section class="panel">

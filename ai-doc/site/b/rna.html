@@ -82,7 +82,7 @@ RNA_def_property_update(prop, 0, "rna_Mesh_update_geom_and_params");</pre>
 
     <section class="panel">
       <h2>写完为什么要 update</h2>
-      <p>运行时 <code>rna_access.cc</code> 的 <code>RNA_property_update</code>：调用 <code>prop-&gt;update</code>，默认再 <code>DEG_id_tag_update</code>（可用 <code>PROP_NO_DEG_UPDATE</code> 关掉），并 <code>WM_msg_publish_rna</code> 刷新绑定该属性的控件。</p>
+      <p>运行时入口很薄：<code>RNA_property_update(C, ptr, prop)</code> 立刻转到 <code>rna_property_update(C, CTX_data_main(C), CTX_data_scene(C), ptr, prop)</code>（<code>rna_access.cc</code>）。内部调用 <code>prop-&gt;update</code>，默认再 <code>DEG_id_tag_update</code>（可用 <code>PROP_NO_DEG_UPDATE</code> 关掉），并 <code>WM_msg_publish_rna</code> 刷新绑定该属性的控件。</p>
       <pre class="src">/* rna_mesh.cc */
 rna_Mesh_update_geom_and_params(...) {
   DEG_id_tag_update(id, ID_RECALC_GEOMETRY | ID_RECALC_PARAMETERS);

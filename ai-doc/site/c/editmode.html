@@ -67,7 +67,9 @@
       BKE_mesh_to_bmesh / BM_mesh_bm_from_me
       mesh->runtime->edit_mesh = make_shared&lt;BMEditMesh&gt;()
       BKE_editmesh_looptris_and_normals_calc
-    DEG_id_tag_update(&amp;ob->id, ID_RECALC_GEOMETRY)</pre>
+    DEG_id_tag_update(&amp;ob->id, ID_RECALC_GEOMETRY)
+    WM_main_add_notifier(NC_SCENE | ND_MODE | NS_EDITMODE_MESH, nullptr)</pre>
+      <p>源码先检查 <code>BKE_object_is_in_editmode</code>、数据是否可编辑、是否库数据。同一份 Mesh 不能同时被多个物体开编辑（见注释 #86767）。</p>
     </section>
     <section class="panel">
       <h2>离开</h2>
