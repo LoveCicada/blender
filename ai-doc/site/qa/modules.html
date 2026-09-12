@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>问答 · 模块 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>二百问答 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">Q001–050 · 模块</p>
+      <h1>源码目录怎么切</h1>
+      <p class="lede">对齐 <code>source/blender/CMakeLists.txt</code> 与 <code>intern/cycles</code>。问的是「谁负责、谁不负责」，不是把每个 <code>.cc</code> 列一遍。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">问答入口</a>
+      <a href="modules.html" class="is-active">模块 001–050</a>
+      <a href="features.html">功能 051–100</a>
+      <a href="ui-data.html">UI–数据 101–150</a>
+      <a href="render.html">渲染 151–200</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/neighbors.svg" alt="建模相关模块邻居">
+      <figcaption>编辑器改拓扑；修改器在求值时叠加；最后才分给视口或 Cycles。</figcaption>
+    </figure>
+    <p class="qa-toc">
+      <a href="#q001">001</a><a href="#q002">002</a><a href="#q003">003</a><a href="#q004">004</a><a href="#q005">005</a>
+      <a href="#q006">006</a><a href="#q007">007</a><a href="#q008">008</a><a href="#q009">009</a><a href="#q010">010</a>
+      <a href="#q011">011</a><a href="#q012">012</a><a href="#q013">013</a><a href="#q014">014</a><a href="#q015">015</a>
+      <a href="#q016">016</a><a href="#q017">017</a><a href="#q018">018</a><a href="#q019">019</a><a href="#q020">020</a>
+      <a href="#q021">021</a><a href="#q022">022</a><a href="#q023">023</a><a href="#q024">024</a><a href="#q025">025</a>
+      <a href="#q026">026</a><a href="#q027">027</a><a href="#q028">028</a><a href="#q029">029</a><a href="#q030">030</a>
+      <a href="#q031">031</a><a href="#q032">032</a><a href="#q033">033</a><a href="#q034">034</a><a href="#q035">035</a>
+      <a href="#q036">036</a><a href="#q037">037</a><a href="#q038">038</a><a href="#q039">039</a><a href="#q040">040</a>
+      <a href="#q041">041</a><a href="#q042">042</a><a href="#q043">043</a><a href="#q044">044</a><a href="#q045">045</a>
+      <a href="#q046">046</a><a href="#q047">047</a><a href="#q048">048</a><a href="#q049">049</a><a href="#q050">050</a>
+    </p>
+
+    <section class="qa-group">
+      <h2>数据与文件</h2>
+      <details class="qa" id="q001">
+        <summary><span class="qn">001</span> makesdna 是模块还是「场景格式」？</summary>
+        <div class="ans">
+          <p>它是构建期工具加一组 <code>DNA_*_types.h</code>。扫头文件编成 SDNA 表，这份表既是当前进程布局，也写进每个 <code>.blend</code> 的 <code>DNA1</code> 块。它不实现挤出或渲染。</p>
+          <p>常见误解：把 DNA 当成游戏引擎那种场景树。加载结果是 <code>Main</code> 里的 ID 链表，不是一棵可遍历的节点图。</p>
+          <p class="src"><code>source/blender/makesdna/</code> · <a href="../catalog.html#makesdna">makesdna</a> · <a href="../b/dna.html">DNA</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q002">
+        <summary><span class="qn">002</span> 为什么 Mesh 要从 ID 开头？</summary>
+        <div class="ans">
+          <p>每个可存盘数据块带 <code>ID</code> 头：名字前两字节是类型码（网格是 <code>ID_ME</code>）、用户计数 <code>us</code>、<code>recalc</code>、<code>properties</code>。blenkernel 用同一套 ID 生命周期管 Mesh / Object / Scene。</p>
+          <p>没有 ID 头就无法进 <code>Main</code>、无法被其它块引用、也无法走 depsgraph 的「按 ID 标脏」。</p>
+          <p class="src"><code>DNA_mesh_types.h</code> · <code>DNA_ID.h</code> · <a href="../catalog.html#makesdna">makesdna</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q003">
+        <summary><span class="qn">003</span> makesrna 为什么单独成模块，不跟 DNA 写在一起？</summary>
+        <div class="ans">
+          <p>DNA 管磁盘布局；RNA 管对外名字、类型、update、枚举。面板、Python <code>bpy</code>、Operator 属性只认 RNA，不直接扫结构体。同一字段可以换 RNA 名而不改文件格式。</p>
+          <p>定义在 <code>makesrna/intern/rna_*.cc</code>，构建工具 <code>makesrna.cc</code> 生成访问代码。它不拥有网格算法。</p>
+          <p class="src"><code>RNA_def_property_*_sdna</code> · <a href="../catalog.html#makesrna">makesrna</a> · <a href="../b/rna.html">RNA</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q004">
+        <summary><span class="qn">004</span> blenkernel 和 makesdna 谁才是「运行时对象」？</summary>
+        <div class="ans">
+          <p>DNA 只描述布局。创建、拷贝、释放、命名、用户计数、Mesh/Object 核心逻辑在 blenkernel 的 <code>BKE_*</code>。编辑器和修改器改数据，最后多半落到这里。</p>
+          <p>读源码时：看到 <code>DNA_object_types.h</code> 是字段；看到 <code>BKE_object.hh</code> 才是行为。</p>
+          <p class="src"><code>source/blender/blenkernel/</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q005">
+        <summary><span class="qn">005</span> 打开 .blend 是谁的工作？</summary>
+        <div class="ans">
+          <p>blenloader 把 DNA 结构读写为文件。<code>BLO_read_from_file</code> → 读 <code>DNA1</code> → 按 SDNA 比较标志重建结构 → 得到 <code>Main</code>。版本字段对不上就 <code>DNA_struct_reconstruct</code>。</p>
+          <p>它不建视口、不算修改器。打开文件 ≠ 加载一棵已求值的场景。</p>
+          <p class="src"><code>BLO_read_from_file</code> · <a href="../catalog.html#blenloader">blenloader</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q006">
+        <summary><span class="qn">006</span> Main 是什么，和 Scene 有何不同？</summary>
+        <div class="ans">
+          <p><code>Main</code> 是进程里全部 ID 的数据库（按类型串起来的链表）。<code>Scene</code> 只是其中一块：帧范围、渲染设置、当前 View Layer 指针。一个文件可以有多个 Scene，但只有一份 Main。</p>
+          <p>Operator 用 <code>CTX_data_main</code> 拿数据库，用 <code>CTX_data_scene</code> 拿「用户正在看的那一幕」。</p>
+          <p class="src"><code>CTX_data_main</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q007">
+        <summary><span class="qn">007</span> Object.data 指向谁，这个指针属于哪一层？</summary>
+        <div class="ans">
+          <p>DNA 里 <code>Object</code> 有 <code>ID *data</code>，网格物体指向 <code>Mesh</code>。这是数据块引用，不是「子节点」。RNA 的 <code>object.data</code> 用 pointer funcs（<code>rna_Object_data_get/set</code>），因为换类型还要改 ID 用户计数。</p>
+          <p>误解：以为物体树就是场景图。父子、集合、实例是另一套关系，求值时才展开。</p>
+          <p class="src"><code>DNA_object_types.h</code> · <a href="../catalog.html#makesdna">makesdna</a> · <a href="../b/rna.html">RNA</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q008">
+        <summary><span class="qn">008</span> 为什么运行时指针可以不进 DNA？</summary>
+        <div class="ans">
+          <p><code>MeshRuntime *runtime</code> 明确不存盘，里面才挂 <code>edit_mesh</code>（BMesh）。存盘只保数组网格。进编辑模式是一次格式转换，不是多写一套文件字段。</p>
+          <p>设计意图：文件稳定、编辑结构可以换实现。旧版本打开仍能重建 Mesh，再按需建 BMesh。</p>
+          <p class="src"><code>MeshRuntime</code> · <a href="../catalog.html#blenkernel">blenkernel</a> · <a href="../c/mesh-bmesh.html">Mesh / BMesh</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q009">
+        <summary><span class="qn">009</span> SDNA 和 RNA 会不会重复描述同一字段？</summary>
+        <div class="ans">
+          <p>会，职责不同。SDNA 说「这个 C 成员在结构体的几字节」；RNA 说「对外叫什么、单位、软硬限制、update 回调」。RNA 用 <code>RNA_def_property_float_sdna</code> 绑 offset，也可以完全自定义 get/set。</p>
+          <p>只改 RNA 名通常不破坏旧文件；改 DNA 成员名要走 <code>dna_rename_defs.h</code>。</p>
+          <p class="src"><code>RNA_def_property_float_sdna</code> · <a href="../catalog.html#makesrna">makesrna</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q010">
+        <summary><span class="qn">010</span> 用户计数 us 为什么在 ID 里，不在 Object 里？</summary>
+        <div class="ans">
+          <p>Mesh、材质、节点树都可以被多个物体引用。计数在 ID 上，<code>id_us_plus</code> / <code>id_us_min</code> 统一处理。减到可删除才允许 <code>BKE_id_free</code>。</p>
+          <p>面板里「伪用户」也是改这个计数，避免未链接的数据块被清掉。</p>
+          <p class="src"><code>ID.us</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q011">
+        <summary><span class="qn">011</span> blenloader 要不要管撤销？</summary>
+        <div class="ans">
+          <p>撤销步的 memfile 会借用类似「把 DNA 写成内存文件」的机制，但那是 undo 模块的细节，目录里刻意不展开。日常分析：打开文件走 <code>BLO_read_from_file</code>，撤销走 <code>ED_undo_push_op</code>。</p>
+          <p>不要把「写 .blend」和「推一步撤销」当成同一个模块。</p>
+          <p class="src"><code>ED_undo_push_op</code> · <a href="../catalog.html#blenloader">blenloader</a> · <a href="../b/update.html">更新</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q012">
+        <summary><span class="qn">012</span> CMake 里还有 compositor / io，地图为什么不建条目？</summary>
+        <div class="ans">
+          <p>它们在官方树里真实存在。本学习站主线是网格编辑和渲染分道，弱写合成、序列、雕刻、IO、GHOST，避免地图膨胀成第二份 CMake。</p>
+          <p>碰到符号再补条目，不先空挂一堆「以后再写」。</p>
+          <p class="src"><a href="../catalog.html">子系统目录</a> · <a href="../modules.html">按模块</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>网格与几何</h2>
+      <details class="qa" id="q013">
+        <summary><span class="qn">013</span> bmesh 模块和 Mesh DNA 为什么要并存？</summary>
+        <div class="ans">
+          <p>磁盘与求值喜欢连续数组（<code>verts_num</code>、<code>CustomData</code>）。编辑需要半边：点/边/环/面互相指，挤出、溶解、切割才快。bmesh 是编辑态拓扑库，不是第二种文件格式。</p>
+          <p>转换：<code>BM_mesh_bm_from_me</code> / <code>BM_mesh_bm_to_me</code>。进编辑后真相在 <code>MeshRuntime.edit_mesh</code>。</p>
+          <p class="src"><code>source/blender/bmesh/</code> · <a href="../catalog.html#bmesh">bmesh</a> · <a href="../c/mesh-bmesh.html">两套网格</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q014">
+        <summary><span class="qn">014</span> 谁拥有 BMEditMesh，bmesh 还是 blenkernel？</summary>
+        <div class="ans">
+          <p>结构在 editors/BKE 侧：<code>mesh->runtime->edit_mesh</code> 是 <code>shared_ptr&lt;BMEditMesh&gt;</code>，里面的 <code>bm</code> 才是 bmesh 库对象。bmesh 提供算子和半边原语，不负责「当前物体是否在编辑模式」。</p>
+          <p>模式标志在 <code>Object.mode</code>（<code>OB_MODE_EDIT</code>）。</p>
+          <p class="src"><code>BMEditMesh</code> · <a href="../catalog.html#blenkernel">blenkernel</a> · <a href="../c/editmode.html">进出编辑模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q015">
+        <summary><span class="qn">015</span> geometry 模块是几何节点本身吗？</summary>
+        <div class="ans">
+          <p>不是。<code>source/blender/geometry/</code> 是无状态算法库：属性域、字段、网格当数据处理。几何节点树的执行由修改器 <code>modifierType_Nodes</code>（<code>MOD_nodes.cc</code>）调用它。</p>
+          <p>它不提供编辑模式的挤出。把「网格当数据」和「网格当半边拓扑」分开，是有意的模块边界。</p>
+          <p class="src"><code>source/blender/geometry/</code> · <a href="../catalog.html#geometry">geometry</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q016">
+        <summary><span class="qn">016</span> modifiers 模块算的是原网格还是副本？</summary>
+        <div class="ans">
+          <p>参数在 <code>Object.modifiers</code>（DNA 链表）。计算发生在 depsgraph 求值：<code>BKE_object_eval_uber_data</code> → <code>mesh_calc_modifiers</code> / <code>editbmesh_calc_modifiers</code>。结果挂到求值副本，原 Mesh 默认不动。</p>
+          <p>Apply 才烤回原始网格，那是 editors/object 的 Operator，不是修改器模块的日常路径。</p>
+          <p class="src"><code>ModifierTypeInfo</code> · <a href="../catalog.html#modifiers">modifiers</a> · <a href="../c/modifiers.html">修改器</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q017">
+        <summary><span class="qn">017</span> 修改器面板为什么在 scripts 里，实现却在 modifiers/？</summary>
+        <div class="ans">
+          <p>面板 <code>properties_data_modifier.py</code> 只 <code>layout.prop</code> / 添加删除 Operator。实现是 <code>ModifierTypeInfo.modify_mesh</code> 等 C 回调。UI 模块画控件，计算模块变形。</p>
+          <p>这是全站同一原则：Python UI 不是第二份算法。</p>
+          <p class="src"><code>scripts/startup/bl_ui/properties_data_modifier.py</code> · <a href="../catalog.html#python-ui">Python UI</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q018">
+        <summary><span class="qn">018</span> 几何节点为什么说「是修改器，不是 BMesh 替代」？</summary>
+        <div class="ans">
+          <p>节点修改器吃的是数组网格 / Geometry Set，跑在求值时。编辑模式工具仍改 <code>em->bm</code>。两者可以同时存在：你在编辑基网格，视口看到的是节点叠完的结果。</p>
+          <p>想用节点「永久改拓扑」要 Apply，那是破坏性写回，和挤出不是一条路。</p>
+          <p class="src"><code>modifierType_Nodes</code> · <a href="../c/modifiers.html">修改器</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q019">
+        <summary><span class="qn">019</span> CustomData 和 AttributeStorage 属于哪个模块？</summary>
+        <div class="ans">
+          <p>字段画在 DNA Mesh 上，运行时读写在 BKE / geometry。它们描述顶点色、UV、通用属性，不是 bmesh 的选择历史。编辑模式会在转换时把属性带到 BMesh 层。</p>
+          <p>分析建模时记住：属性跟着数据块走，算子只改拓扑时也要维护属性。</p>
+          <p class="src"><code>CustomData</code> · <code>AttributeStorage</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q020">
+        <summary><span class="qn">020</span> BMO 表在哪个模块，为什么不放在 editors/mesh？</summary>
+        <div class="ans">
+          <p><code>bmo_opdefines[]</code> 在 <code>bmesh/intern/bmesh_opdefines.cc</code>。editors/mesh 的 Operator 是用户命令；BMO 是可组合的拓扑原语（字符串名 + 槽位）。Python / 其它编辑器也能调同一张表。</p>
+          <p>细分有时直接 <code>BM_mesh_esubdivide</code>，挤出走 <code>"extrude_face_region"</code>。两条都合法，不要当成混乱。</p>
+          <p class="src"><code>BMO_op_exec</code> · <a href="../catalog.html#bmesh">bmesh</a> · <a href="../c/ops.html">挤出 / BMO</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q021">
+        <summary><span class="qn">021</span> 镜像修改器和镜像编辑工具是同一模块吗？</summary>
+        <div class="ans">
+          <p>不是。修改器 <code>modifierType_Mirror</code> 在 modifiers，求值时变形副本。编辑模式的镜像/对称是 editors + bmesh 对当前选择动手。一个非破坏、一个破坏（立刻改 BMesh）。</p>
+          <p>用户看着都叫「镜像」，源码按「何时算、改谁」切开。</p>
+          <p class="src"><code>MOD_mirror.cc</code> · <a href="../catalog.html#modifiers">modifiers</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q022">
+        <summary><span class="qn">022</span> 细分表面为什么既可以当修改器又出现在视口级别？</summary>
+        <div class="ans">
+          <p>实现仍是 <code>modifierType_Subsurf</code>。视口/渲染级别是修改器参数，求值时 <code>eModifierMode_Realtime</code> 与 <code>Render</code> 读不同级别。Draw 还可能 <code>BKE_mesh_wrapper_ensure_subdivision</code> 拿最终网格。</p>
+          <p>预览 ≠ Apply。文件里的基网格顶点数可以仍是细分前的。</p>
+          <p class="src"><code>MOD_subsurf.cc</code> · <a href="../c/modifiers.html">修改器</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q023">
+        <summary><span class="qn">023</span> 为什么求值网格有 wrapper，而不是永远是 Mesh？</summary>
+        <div class="ans">
+          <p>编辑模式求值先 <code>BKE_mesh_wrapper_from_editmesh</code>，避免每次工具都完整写回 DNA。修改器栈可以在 wrapper 上继续。最终查询 <code>BKE_object_get_evaluated_mesh</code> 再保证数组网格。</p>
+          <p>这是性能边界：编辑态保持半边，求值需要数组时再转。</p>
+          <p class="src"><code>BKE_mesh_wrapper_from_editmesh</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q024">
+        <summary><span class="qn">024</span> 雕刻模块为什么不在这 50 题里展开？</summary>
+        <div class="ans">
+          <p>雕刻有自己的 PBVH / 笔刷路径，和 BMesh 编辑不是同一套。地图注明弱写。分析网格编辑时不要把 <code>sculpt</code> 目录误认成挤出实现。</p>
+          <p>需要时再单开投影，避免和编辑模式问答缠在一起。</p>
+          <p class="src"><a href="../modules.html">按模块</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>命令与界面</h2>
+      <details class="qa" id="q025">
+        <summary><span class="qn">025</span> windowmanager 为什么是「用户做了一件事」的入口？</summary>
+        <div class="ans">
+          <p>事件循环、keymap、窗口、<code>wmOperator</code> 注册、notifier、文件选择都在 WM。快捷键、菜单、按钮、 <code>bpy.ops</code> 最后都进 <code>wm_operator_invoke</code>。编辑器函数不该被 UI 直接当普通 C 函数乱调。</p>
+          <p><code>WM_main</code> 一圈：事件 → handlers → notifiers → 绘制。进循环前还可能先刷新 depsgraph。</p>
+          <p class="src"><code>WM_main</code> · <a href="../catalog.html#windowmanager">windowmanager</a> · <a href="../b/operator.html">Operator</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q026">
+        <summary><span class="qn">026</span> editors/mesh 和 bmesh 谁听快捷键？</summary>
+        <div class="ans">
+          <p>keymap 命中的是 <code>MESH_OT_*</code>，注册在 <code>ED_operatortypes_mesh</code>。exec 里再调 BMesh / BMO。bmesh 库自己没有「E 键」。</p>
+          <p>poll 通常是 <code>ED_operator_editmesh</code>：没有 <code>BMEditMesh</code> 就静默无效。</p>
+          <p class="src"><code>editors/mesh/</code> · <a href="../catalog.html#editors-mesh">editors/mesh</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q027">
+        <summary><span class="qn">027</span> editors/object 改的是拓扑吗？</summary>
+        <div class="ans">
+          <p>一般不是。添加物体、父子、集合、应用变换、进出编辑模式都在这里。Tab 的 <code>OBJECT_OT_editmode_toggle</code> 做格式转换，随后的挤出才去 mesh 编辑器。</p>
+          <p>物体模式 G/R/S 写 <code>Object</code> 矩阵，不进 BMesh。</p>
+          <p class="src"><code>editors/object/</code> · <a href="../catalog.html#editors-object">editors/object</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q028">
+        <summary><span class="qn">028</span> 为什么 G/R/S 单独一个 editors/transform？</summary>
+        <div class="ans">
+          <p>物体、编辑点、UV、骨骼共用一套 modal 变换内核，按模式写回不同数据。挤出宏 <code>MESH_OT_extrude_region_move</code> 也是先 BMO 再接 transform。</p>
+          <p>不要在每个编辑器里复制一套抓取/旋转/缩放。</p>
+          <p class="src"><code>editors/transform/</code> · <a href="../catalog.html#editors-transform">transform</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q029">
+        <summary><span class="qn">029</span> space_view3d 实现 EEVEE 吗？</summary>
+        <div class="ans">
+          <p>不。它是编辑器空间：导航、着色模式、叠层、选择。它决定「这块区域要画什么、启用哪组引擎」，像素调度在 draw。</p>
+          <p><code>view3d_main_region_draw</code> → <code>DRW_draw_view</code>。换 Solid/Material 只改 View3D 状态，不改 Mesh DNA。</p>
+          <p class="src"><code>editors/space_view3d/</code> · <a href="../catalog.html#editors-view3d">View3D</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q030">
+        <summary><span class="qn">030</span> editors/render 自己算光吗？</summary>
+        <div class="ans">
+          <p>不算。<code>RENDER_OT_render</code> 调度 <code>RE_RenderFrame</code> / <code>RE_engine_render</code>。图像编辑器槽位、视口渲染按钮也在这一层。路径追踪在 Cycles，光栅 F12 在 EEVEE/Workbench。</p>
+          <p>用户按 F12 先碰到的是 Operator，不是 kernel。</p>
+          <p class="src"><code>editors/render/</code> · <a href="../catalog.html#editors-render">editors/render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q031">
+        <summary><span class="qn">031</span> bl_ui 为什么几乎看不到改顶点的代码？</summary>
+        <div class="ans">
+          <p><code>layout.prop</code> / <code>layout.operator</code> 只提交 RNA 属性或 Operator 名（<code>rna_uiItemR</code> / <code>rna_uiItemO</code>）。顶点数组在 C 的 exec 里改。Python 面板是布局客户。</p>
+          <p><code>scripts/startup/bl_operators/</code> 可以注册 Python Operator，但编辑模式主力仍是 C 的 <code>MESH_OT_*</code>。</p>
+          <p class="src"><code>scripts/startup/bl_ui/</code> · <a href="../catalog.html#python-ui">Python UI</a> · <a href="../b/python-ui.html">面板只画</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q032">
+        <summary><span class="qn">032</span> GHOST 算不算本站的「模块条目」？</summary>
+        <div class="ans">
+          <p>GHOST 是平台窗口/事件抽象，在 <code>intern/ghost</code>，WM 之下。分析 UI–数据链时知道它存在即可：事件从系统进 GHOST 再进 WM。本轮不写各 OS 后端。</p>
+          <p>不要从 GHOST 里找 Mesh 字段。</p>
+          <p class="src"><code>intern/ghost</code> · <a href="../catalog.html#windowmanager">windowmanager</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q033">
+        <summary><span class="qn">033</span> SpaceType / Region 属于 WM 还是 editors？</summary>
+        <div class="ans">
+          <p>类型注册在 editors（<code>ED_spacetype_view3d</code> 等），窗口里的实例和事件分发在 WM / screen。View3D 是一种 Space，属性编辑器是另一种。context 里的 area / region 决定 <code>bl_ui</code> 的 <code>poll</code>。</p>
+          <p>同一 Operator 在不同 Space 里 poll 可能失败，这是设计，不是 bug。</p>
+          <p class="src"><code>ED_spacetypes_*</code> · <a href="../catalog.html#windowmanager">windowmanager</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q034">
+        <summary><span class="qn">034</span> keymap 存在哪个模块？</summary>
+        <div class="ans">
+          <p>默认 keymap 有 Python 配置，匹配和调用在 WM：<code>wm_event_do_handlers</code> → <code>wm_eventmatch</code> → <code>wm_handler_operator_call</code>。改快捷键不改 <code>MESH_OT_subdivide</code> 的 exec。</p>
+          <p>idname 稳定（<code>MESH_OT_subdivide</code> ↔ <code>bpy.ops.mesh.subdivide</code>），键位可换。</p>
+          <p class="src"><code>wm_eventmatch</code> · <a href="../b/operator.html">Operator</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q035">
+        <summary><span class="qn">035</span> 属性编辑器怎样填上 context.mesh？</summary>
+        <div class="ans">
+          <p>不是 Context 结构体上的固定字段。<code>buttons_context()</code> 沿 Scene → Object → <code>ob->data</code> 填名字 <code>"mesh"</code>。C 侧 <code>CTX_data_pointer_get(C, "mesh")</code>。面板 <code>poll</code> 检查 <code>context.mesh</code>。</p>
+          <p>换活动物体，同一面板脚本不用改，context 供应商换了指针。</p>
+          <p class="src"><code>editors/space_buttons/buttons_context.cc</code> · <a href="../b/python-ui.html">Python UI</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q036">
+        <summary><span class="qn">036</span> 节点编辑器 space_node 和 nodes/shader 如何分工？</summary>
+        <div class="ans">
+          <p><code>editors/space_node/</code> 是编辑器空间：框选、连线、缩放。<code>nodes/shader/</code> 是节点类型与执行接口。菜单在 Python。同一套节点语义再分给 EEVEE / Cycles 编译。</p>
+          <p>不要在 space_node 里找 SVM 或 GPU shader 生成。</p>
+          <p class="src"><code>nodes/shader/</code> · <a href="../catalog.html#nodes-shader">shader nodes</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>求值与像素模块</h2>
+      <details class="qa" id="q037">
+        <summary><span class="qn">037</span> depsgraph 模块吃的是原数据还是求值世界？</summary>
+        <div class="ans">
+          <p>它根据「谁依赖谁」从 Main 的 ID 图建操作节点，写出给绘制/渲染看的世界：修改器、约束、实例、动画。原数据尽量不动（Copy-on-eval）。</p>
+          <p>视口建 <code>DEG_graph_build_from_view_layer</code>；F12 建 <code>DEG_graph_build_for_render_pipeline</code>。两张图可以共存。</p>
+          <p class="src"><code>source/blender/depsgraph/</code> · <a href="../catalog.html#depsgraph">depsgraph</a> · <a href="../d/depsgraph.html">求值图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q038">
+        <summary><span class="qn">038</span> 为什么没有名为 DEG_evaluate 的公开入口？</summary>
+        <div class="ans">
+          <p>对外是 <code>DEG_evaluate_on_refresh</code>（数据变了）和 <code>DEG_evaluate_on_framechange</code>（换帧），包在 <code>BKE_scene_graph_update_tagged</code> / <code>BKE_scene_graph_evaluated_ensure</code>。内部才跑 <code>OperationNode::evaluate</code>。</p>
+          <p>搜 <code>DEG_evaluate(</code> 当总开关会落空，这是命名事实，不是文档笔误。</p>
+          <p class="src"><code>DEG_evaluate_on_refresh</code> · <a href="../d/depsgraph.html">Depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q039">
+        <summary><span class="qn">039</span> draw 模块是引擎还是调度层？</summary>
+        <div class="ans">
+          <p>调度层。Manager、pass、资源、引擎接口 <code>DrawEngine</code>（init / sync / draw）。EEVEE、Workbench、Overlay、Select 挂在它下面。F12 的光栅引擎也经 <code>DRW_engines_register</code> 注册到 render。</p>
+          <p>它假定 depsgraph 已经求过：<code>CTX_data_expect_evaluated_depsgraph</code>。</p>
+          <p class="src"><code>DRW_draw_view</code> · <a href="../catalog.html#draw">draw</a> · <a href="../d/draw.html">视口</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q040">
+        <summary><span class="qn">040</span> gpu 模块和 Cycles device 是不是同一套？</summary>
+        <div class="ans">
+          <p>不是。<code>source/blender/gpu/</code> 给 Draw / EEVEE / 叠层：缓冲、着色器、帧缓冲（Vulkan/OpenGL 等）。Cycles 的 <code>intern/cycles/device/</code> 跑自己的 kernel 后端。分析不拉预编译库。</p>
+          <p>视口像素走 gpu；路径追踪内核一般不走这条抽象。</p>
+          <p class="src"><code>source/blender/gpu/</code> · <a href="../catalog.html#gpu">gpu</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q041">
+        <summary><span class="qn">041</span> EEVEE 为什么住在 draw/engines 而不是 intern/？</summary>
+        <div class="ans">
+          <p>它是光栅引擎，深度绑在 Draw Manager 的 sync/draw 节奏上。路径 <code>draw/engines/eevee/</code>。<code>intern/</code> 留给相对独立的大库（Cycles、GHOST）。</p>
+          <p>F12 选 EEVEE 时仍是光栅：<code>eevee_render</code> → <code>DRW_render_to_image</code>，不是换到 Cycles kernel。</p>
+          <p class="src"><code>draw/engines/eevee/</code> · <a href="../catalog.html#eevee">EEVEE</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q042">
+        <summary><span class="qn">042</span> Workbench 和 EEVEE 为何并列为两个引擎？</summary>
+        <div class="ans">
+          <p>Workbench 做 Solid / 线框 / 结构预览：MatCap、工作室光，不追求完整着色节点。EEVEE 吃 <code>GPU_material_from_nodetree</code>。建模看灰模多半是 Workbench。</p>
+          <p>分开后 Solid 模式不必编译整棵材质图。</p>
+          <p class="src"><code>draw/engines/workbench/</code> · <a href="../catalog.html#workbench">Workbench</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q043">
+        <summary><span class="qn">043</span> overlay 是 RenderEngineType 吗？</summary>
+        <div class="ans">
+          <p>不是。选择轮廓、编辑线、gizmo 活在 <code>DRWViewData</code>，几乎每帧都开。它不是 <code>scene.r.engine</code> 那种可切换出图引擎。</p>
+          <p>F12 通常没有这套交互叠层。视口「看起来花」常常是 overlay，不是 EEVEE 算了一遍线框。</p>
+          <p class="src"><code>DRWViewData</code> · <a href="../d/draw.html">Draw / overlay</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q044">
+        <summary><span class="qn">044</span> render 模块做什么、不做什么？</summary>
+        <div class="ans">
+          <p><code>source/blender/render/</code>：结果缓冲、图层、引擎注册、作业。<code>RE_engine_render</code> 按 <code>scene.r.engine</code> 找 <code>RenderEngineType</code>。自己不做路径追踪。</p>
+          <p>未知 id 回落到 <code>BLENDER_EEVEE</code>。Hydra 只承认目录存在。</p>
+          <p class="src"><code>RE_engines_find</code> · <a href="../catalog.html#render">render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q045">
+        <summary><span class="qn">045</span> Cycles 为什么在 intern/ 而不是 source/blender/？</summary>
+        <div class="ans">
+          <p>它是可同步进来的独立渲染器：自己的 Scene / Integrator / kernel / device。Blender 侧适配在 <code>intern/cycles/blender/</code>（<code>BlenderSync</code>）。与 Draw 分道，只共享求值后的场景语义。</p>
+          <p>历史与工程边界：内核不必跟每个编辑器头文件缠在一起。</p>
+          <p class="src"><code>intern/cycles/</code> · <a href="../catalog.html#cycles">Cycles</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q046">
+        <summary><span class="qn">046</span> 着色节点模块编译一次还是两次？</summary>
+        <div class="ans">
+          <p>用户只维护一套节点树。EEVEE：<code>GPU_material_from_nodetree</code>，目标 <code>SHD_OUTPUT_EEVEE</code>。Cycles：<code>add_nodes</code> / SVM，目标 <code>SHD_OUTPUT_CYCLES</code>。不是同一份机器码。</p>
+          <p>节点定义在 <code>nodes/shader/</code>；编译器分属 gpu/eevee 与 intern/cycles。</p>
+          <p class="src"><code>ntreeGPUMaterialNodes</code> · <a href="../catalog.html#nodes-shader">shader nodes</a> · <a href="../d/eevee.html">EEVEE</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q047">
+        <summary><span class="qn">047</span> 视口里的 Cycles 预览走哪一模块？</summary>
+        <div class="ans">
+          <p>着色模式 Rendered 且引擎为 Cycles 时，Draw 启用 <code>draw::external::Engine</code> 的 <code>view_draw</code>，不是把 kernel 嵌进 EEVEE pass。材质预览球却常常仍走 EEVEE（<code>RE_USE_EEVEE_VIEWPORT</code>）。</p>
+          <p>「场景引擎是 Cycles」≠「屏幕上每一块像素都是 kernel」。</p>
+          <p class="src"><code>RE_USE_EEVEE_VIEWPORT</code> · <a href="../d/draw.html">Draw</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q048">
+        <summary><span class="qn">048</span> 模块边界上，谁都不该直接改对方的私有缓存？</summary>
+        <div class="ans">
+          <p>典型契约：editors 改数据并 <code>DEG_id_tag_update</code>；depsgraph 重算副本；draw/Cycles 只读求值结果。editors 不要去改 EEVEE 的 GPU 材质缓存；Cycles 不要写回 <code>Mesh.verts_num</code>。</p>
+          <p>notifier 通知「哪类数据变了」，不携带顶点数组本身。</p>
+          <p class="src"><code>DEG_id_tag_update</code> · <a href="../b/update.html">更新</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q049">
+        <summary><span class="qn">049</span> 从 mesh 编辑器走到 Cycles 要跨哪些模块？</summary>
+        <div class="ans">
+          <p>WM → editors/mesh → bmesh →（写回）BKE Mesh → tag → depsgraph（Render 或 Viewport）→ 若 F12：render → Cycles sync。视口则 draw → Workbench/EEVEE，不进 kernel。</p>
+          <p>这是邻居图要记住的一条主路径。</p>
+          <p class="src"><a href="../diagrams/neighbors.svg">neighbors.svg</a> · <a href="../modules.html">按模块</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q050">
+        <summary><span class="qn">050</span> 读 CMake 时怎样避免把「目录」当成「功能」？</summary>
+        <div class="ans">
+          <p>CMake 切的是链接与编译单元。用户功能（挤出、F12）会穿过多个目录。本站目录页写职责和邻居；功能页从动作反查。问答这组只问模块边界。</p>
+          <p>下一组从「我在软件里做什么」再走一遍同一套条目。</p>
+          <p class="src"><a href="../catalog.html">目录</a> · <a href="features.html">功能问答</a></p>
+        </div>
+      </details>
+    </section>
+
+    <p class="qa-pager">
+      <a href="index.html">问答入口</a>
+      <a href="features.html">下一组：功能 Q051–100</a>
+    </p>
+  </main>
+  <footer class="wrap">权威条目仍是 <a href="../catalog.html">catalog.html</a>。</footer>
+</body>
+</html>

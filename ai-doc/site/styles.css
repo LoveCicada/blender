@@ -382,6 +382,99 @@ footer {
   font-size: 0.85rem;
 }
 
+.qa-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0 0 1.2rem;
+}
+
+.qa-toc a {
+  text-decoration: none;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  padding: 0.1rem 0.4rem;
+  color: var(--ink-soft);
+}
+
+.qa-toc a:hover {
+  border-color: var(--rust);
+  color: var(--rust-ink);
+}
+
+.qa-group {
+  margin: 0 0 1.4rem;
+}
+
+.qa-group h2 {
+  margin: 1.2rem 0 0.7rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.qa {
+  margin: 0 0 0.45rem;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  scroll-margin-top: 4.5rem;
+}
+
+.qa summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.7rem 0.9rem;
+  font-weight: 600;
+}
+
+.qa summary::-webkit-details-marker {
+  display: none;
+}
+
+.qa summary .qn {
+  display: inline-block;
+  min-width: 2.4rem;
+  margin-right: 0.45rem;
+  color: var(--rust);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.qa[open] {
+  border-color: var(--rust);
+}
+
+.qa[open] summary {
+  border-bottom: 1px dashed var(--line);
+  color: var(--rust-ink);
+}
+
+.qa .ans {
+  padding: 0.85rem 0.95rem 1rem;
+}
+
+.qa .ans p {
+  margin: 0 0 0.7rem;
+}
+
+.qa .src {
+  margin: 0;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--line);
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.qa-pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin: 1.5rem 0 0;
+}
+
 @media (max-width: 720px) {
   h1 {
     font-size: 1.45rem;

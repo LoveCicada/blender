@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>二百问答 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>二百问答 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">200 题 · 四组投影</p>
+      <h1>用问答把设计问穿</h1>
+      <p class="lede">权威条目仍在<a href="../catalog.html">子系统目录</a>。这里按<strong>模块、功能、UI–数据、渲染</strong>各 50 题，点开看设计选择、源码符号和常见误解。建模题拆进模块与功能，不另开一册。</p>
+    </section>
+    <figure class="figure">
+      <img src="../diagrams/flow.svg" alt="从 UI 经数据与求值再到视口或 Cycles">
+      <figcaption>四组问答沿着这条链走：谁负责、用户在做什么、UI 怎样改到同一份数据、像素在哪分道。</figcaption>
+    </figure>
+    <div class="grid-5">
+      <a class="card" href="modules.html">
+        <div class="n">Q001–050</div>
+        <h3>模块</h3>
+        <p>源码目录怎么切：DNA、BKE、editors、draw、Cycles。</p>
+      </a>
+      <a class="card" href="features.html">
+        <div class="n">Q051–100</div>
+        <h3>功能</h3>
+        <p>物体模式、改网格、修改器、材质、视口、F12。</p>
+      </a>
+      <a class="card" href="ui-data.html">
+        <div class="n">Q101–150</div>
+        <h3>UI–数据</h3>
+        <p>DNA / RNA / 面板 / Operator / 标脏与撤销。</p>
+      </a>
+      <a class="card" href="render.html">
+        <div class="n">Q151–200</div>
+        <h3>渲染</h3>
+        <p>Depsgraph、Draw、EEVEE、Cycles 与节点分叉。</p>
+      </a>
+    </div>
+    <section class="panel">
+      <h2>怎么用</h2>
+      <ul>
+        <li>页顶编号跳到题目；默认折叠，避免 50 题铺开。</li>
+        <li>每题有符号或路径，并链回目录或深讲。函数走读仍看<a href="../b/index.html">数据</a> / <a href="../c/index.html">建模</a> / <a href="../d/index.html">渲染</a>。</li>
+        <li>合成、序列、雕刻、IO、GHOST 只点到为止，不凑题。</li>
+      </ul>
+    </section>
+  </main>
+  <footer class="wrap">对照 Blender 5.03 alpha。不是官方手册。</footer>
+</body>
+</html>

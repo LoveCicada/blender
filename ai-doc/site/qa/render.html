@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>问答 · 渲染 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>二百问答 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">Q151–200 · 渲染</p>
+      <h1>求值之后才分道</h1>
+      <p class="lede">视口和 F12 <strong>共享</strong>求值结果，<strong>不共享</strong>像素后端。没有名为 <code>DEG_evaluate</code> 的总开关。函数走读见<a href="../d/index.html">渲染章</a>。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">问答入口</a>
+      <a href="modules.html">模块 001–050</a>
+      <a href="features.html">功能 051–100</a>
+      <a href="ui-data.html">UI–数据 101–150</a>
+      <a href="render.html" class="is-active">渲染 151–200</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/d-fork.svg" alt="视口与 F12 分道">
+      <figcaption>两张图、两种修改器模式、两套出像素的路。</figcaption>
+    </figure>
+    <p class="qa-toc">
+      <a href="#q151">151</a><a href="#q152">152</a><a href="#q153">153</a><a href="#q154">154</a><a href="#q155">155</a>
+      <a href="#q156">156</a><a href="#q157">157</a><a href="#q158">158</a><a href="#q159">159</a><a href="#q160">160</a>
+      <a href="#q161">161</a><a href="#q162">162</a><a href="#q163">163</a><a href="#q164">164</a><a href="#q165">165</a>
+      <a href="#q166">166</a><a href="#q167">167</a><a href="#q168">168</a><a href="#q169">169</a><a href="#q170">170</a>
+      <a href="#q171">171</a><a href="#q172">172</a><a href="#q173">173</a><a href="#q174">174</a><a href="#q175">175</a>
+      <a href="#q176">176</a><a href="#q177">177</a><a href="#q178">178</a><a href="#q179">179</a><a href="#q180">180</a>
+      <a href="#q181">181</a><a href="#q182">182</a><a href="#q183">183</a><a href="#q184">184</a><a href="#q185">185</a>
+      <a href="#q186">186</a><a href="#q187">187</a><a href="#q188">188</a><a href="#q189">189</a><a href="#q190">190</a>
+      <a href="#q191">191</a><a href="#q192">192</a><a href="#q193">193</a><a href="#q194">194</a><a href="#q195">195</a>
+      <a href="#q196">196</a><a href="#q197">197</a><a href="#q198">198</a><a href="#q199">199</a><a href="#q200">200</a>
+    </p>
+
+    <section class="qa-group">
+      <h2>求值图与 Copy-on-eval</h2>
+      <details class="qa" id="q151">
+        <summary><span class="qn">151</span> 对外求值入口叫什么？</summary>
+        <div class="ans">
+          <p><code>DEG_evaluate_on_refresh</code>（数据变了）和 <code>DEG_evaluate_on_framechange</code>（换帧）。包装在 <code>BKE_scene_graph_update_tagged</code> / <code>BKE_scene_graph_evaluated_ensure</code>。没有 <code>DEG_evaluate</code> 总函数。</p>
+          <p>搜错名字会以为 depsgraph「没入口」。</p>
+          <p class="src"><a href="../d/depsgraph.html">没有叫 DEG_evaluate 的入口</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q152">
+        <summary><span class="qn">152</span> 图里节点分几层？</summary>
+        <div class="ans">
+          <p>ID 节点 → 组件（TRANSFORM / GEOMETRY / SHADING …）→ 操作节点，边是 <code>Relation</code>。构建：<code>DepsgraphNodeBuilder</code> + <code>DepsgraphRelationBuilder</code>。</p>
+          <p>tag 一块几何不必重算全世界变换，靠这套粒度。</p>
+          <p class="src"><code>source/blender/depsgraph/</code> · <a href="../d/depsgraph.html">图里有什么</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q153">
+        <summary><span class="qn">153</span> 视口图和 F12 图为何要两张？</summary>
+        <div class="ans">
+          <p>视口 <code>DEG_graph_build_from_view_layer</code>，模式 <code>DAG_EVAL_VIEWPORT</code>：Realtime 修改器、hide-viewport。F12 <code>DEG_graph_build_for_render_pipeline</code>，<code>DAG_EVAL_RENDER</code>：Render 修改器、hide-render。<code>render_init_depsgraph</code> 另建。</p>
+          <p>场景交互图由 <code>BKE_scene_ensure_depsgraph</code> 保证。</p>
+          <p class="src"><a href="../d/depsgraph.html">两种模式</a> · <a href="../c/modifiers.html">分叉</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q154">
+        <summary><span class="qn">154</span> Copy-on-eval 复制什么？</summary>
+        <div class="ans">
+          <p>求值写副本（<code>deg_eval_copy_on_write.cc</code>），原始 Main 里的 Object/Mesh 尽量不动。查询 <code>DEG_get_evaluated</code> / <code>DEG_get_original_id</code>。</p>
+          <p>所以 F12 不会直接把视口正在编的 DNA 网格改成细分后的数组——除非你 Apply。</p>
+          <p class="src"><a href="../d/depsgraph.html">Copy-on-eval</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q155">
+        <summary><span class="qn">155</span> 画和渲染怎样拿到「算完的网格」？</summary>
+        <div class="ans">
+          <p><code>BKE_object_get_evaluated_mesh</code>（可经 <code>geometry_set_eval</code>，再 <code>BKE_mesh_wrapper_ensure_subdivision</code>）。编辑态还有 cage / final。</p>
+          <p>不要用原始 <code>ob->data</code> 当视口顶点源——那常是未改修改器的基网格。</p>
+          <p class="src"><code>BKE_object_get_evaluated_mesh</code> · <a href="../catalog.html#depsgraph">depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q156">
+        <summary><span class="qn">156</span> 内部求值阶段顺序？</summary>
+        <div class="ans">
+          <p>COPY_ON_EVAL → 可见性 → 并行跑 <code>OperationNode::evaluate</code>（<code>deg_eval.cc</code>）。修改器挂在 GEOMETRY 相关操作上（<code>BKE_object_eval_uber_data</code>）。</p>
+          <p>分析时跟着操作节点走，不要假设单线程从场景根 DFS。</p>
+          <p class="src"><code>deg_eval.cc</code> · <a href="../d/depsgraph.html">内部阶段</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q157">
+        <summary><span class="qn">157</span> 动画换帧为什么不走 on_refresh？</summary>
+        <div class="ans">
+          <p>时间变了，即使没人改 DNA 也要重评驱动、约束、随时间的节点。<code>on_framechange</code> 表达这个原因。数据编辑走 <code>on_refresh</code>。</p>
+          <p>两条入口避免「每帧都当全部 ID 刚被用户改过」。</p>
+          <p class="src"><code>DEG_evaluate_on_framechange</code> · <a href="../d/depsgraph.html">Depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q158">
+        <summary><span class="qn">158</span> 漏掉 tag 会怎样？</summary>
+        <div class="ans">
+          <p>求值图以为几何仍干净，Draw/Cycles 继续用旧副本。症状：滑条或脚本改了数据，画面或 F12 仍是旧网格。</p>
+          <p>UI–数据章的 update / <code>EDBM_update</code> 就是为了避免这个。</p>
+          <p class="src"><code>DEG_id_tag_update</code> · <a href="../b/update.html">更新</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q159">
+        <summary><span class="qn">159</span> 为什么原始 Mesh 尽量不动？</summary>
+        <div class="ans">
+          <p>撤销、文件、多用户引用、编辑态 BMesh 都指向原 ID。若求值原地细分，撤销和引用会一起烂掉。副本把「显示/出图世界」和「作者世界」分开。</p>
+          <p class="src"><a href="../d/depsgraph.html">Copy-on-eval</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q160">
+        <summary><span class="qn">160</span> geometry_set_eval 是什么？</summary>
+        <div class="ans">
+          <p>求值后物体上的几何集合：网格、曲线、实例等。几何节点修改器写这里。Draw/Cycles 再抽出要画或要同步的网格。</p>
+          <p>它不是 BMesh，也不是 DNA 字段。</p>
+          <p class="src"><code>BKE_object_eval_assign_data</code> · <a href="../c/modifiers.html">求值链</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q161">
+        <summary><span class="qn">161</span> 可见性阶段和 hide_render 的关系？</summary>
+        <div class="ans">
+          <p>建图后按模式剔除。Viewport 图尊重视口隐藏；Render 图尊重渲染隐藏。同一物体可以「看得见、渲染没有」。</p>
+          <p>这是功能开关，不是 Draw 自己猜。</p>
+          <p class="src"><a href="../d/depsgraph.html">两种模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q162">
+        <summary><span class="qn">162</span> 编辑模式求值为何还要转数组？</summary>
+        <div class="ans">
+          <p>修改器和绘制要连续数组。<code>BKE_mesh_wrapper_from_editmesh</code> / <code>BM_mesh_bm_to_me_for_eval</code> 出临时网格，用户仍留在编辑模式。</p>
+          <p>不要把求值转换误认成 Tab 出去。</p>
+          <p class="src"><a href="../c/editmode.html">离开 vs 求值</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>Draw 与 overlay</h2>
+      <details class="qa" id="q163">
+        <summary><span class="qn">163</span> 视口一帧从哪进 Draw？</summary>
+        <div class="ans">
+          <p><code>view3d_main_region_draw</code> → <code>DRW_draw_view</code>（<code>draw/intern/draw_context.cc</code>）。这里 <code>CTX_data_expect_evaluated_depsgraph</code>：该求的已经求完。</p>
+          <p>Draw 不负责跑修改器栈。</p>
+          <p class="src"><a href="../d/draw.html">视口先假定图已经求过</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q164">
+        <summary><span class="qn">164</span> DRW_draw_view 里面三步？</summary>
+        <div class="ans">
+          <p><code>ED_view3d_engine_type</code> 决定引擎 → <code>enable_engines</code> → <code>engines_init_and_sync</code>（<code>DEG_OBJECT_ITER</code>）→ <code>engines_draw_scene</code>。接口：<code>init / begin_sync / object_sync / end_sync / draw</code>。</p>
+          <p>网格批来自求值网格 + <code>draw_cache_impl_mesh.cc</code>。</p>
+          <p class="src"><code>DRW_render.hh</code> · <a href="../d/draw.html">一帧</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q165">
+        <summary><span class="qn">165</span> 谁决定 Solid 用 Workbench 还是 EEVEE？</summary>
+        <div class="ans">
+          <p>View3D 着色类型 + 场景引擎标志。<code>ED_view3d_engine_type(scene, v3d->shading.type)</code>。线框/Solid → Workbench；Material 多数走 EEVEE；Rendered + Cycles → external engine。</p>
+          <p>换 Z 键只改这次 enable 的集合。</p>
+          <p class="src"><a href="../d/draw.html">谁上、谁叠</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q166">
+        <summary><span class="qn">166</span> overlay 为什么几乎总开？</summary>
+        <div class="ans">
+          <p>选择轮廓、编辑线、网格显示、gizmo 不属于出图引擎。活在 <code>DRWViewData</code>。关掉着色引擎仍可能要选中高亮。</p>
+          <p>它不是 <code>RenderEngineType</code>，也不能当 <code>scene.r.engine</code>。</p>
+          <p class="src"><a href="../d/draw.html">overlay</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q167">
+        <summary><span class="qn">167</span> F12 的 EEVEE 和视口 EEVEE 如何注册？</summary>
+        <div class="ans">
+          <p><code>DRW_engines_register</code> 里 <code>RE_engines_register</code>，让 render 调度也能找到光栅引擎。F12 走 <code>eevee_render</code> → <code>DRW_render_to_image</code>，仍是光栅。</p>
+          <p>同一引擎家族，作业入口不同。</p>
+          <p class="src"><a href="../catalog.html#eevee">EEVEE</a> · <a href="../catalog.html#render">render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q168">
+        <summary><span class="qn">168</span> 绘制缓存和 DNA 网格是一份吗？</summary>
+        <div class="ans">
+          <p>不是。GPU 批是从求值网格抽出的缓存，随 tag 失效。DNA / BMesh 是作者数据。Draw 不应写回 <code>verts_num</code>。</p>
+          <p class="src"><code>draw_cache_impl_mesh.cc</code> · <a href="../catalog.html#draw">draw</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q169">
+        <summary><span class="qn">169</span> Select 引擎是干什么的？</summary>
+        <div class="ans">
+          <p>离屏 ID 选择：点到的是哪个物体/元素。和漂亮着色无关。属于 Draw 引擎组合，不进 F12。</p>
+          <p>功能上「点选」，模块上是绘制通道。</p>
+          <p class="src"><a href="../catalog.html#draw">draw</a> · <a href="../catalog.html#editors-view3d">View3D</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q170">
+        <summary><span class="qn">170</span> 为什么说着色模式切换不改 Mesh DNA？</summary>
+        <div class="ans">
+          <p>改的是 View3D 空间数据（<code>v3d->shading</code>）。同一 Mesh 可以同时在两个窗口用不同着色。数据块不因此复制。</p>
+          <p class="src"><a href="../d/draw.html">着色模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q171">
+        <summary><span class="qn">171</span> gpu 模块在这一帧扮演什么？</summary>
+        <div class="ans">
+          <p>后端无关的缓冲、着色器、FBO。EEVEE/Workbench/overlay 经它提交。Cycles kernel 不走这条。</p>
+          <p>本站不写 Vulkan vs OpenGL 对照表。</p>
+          <p class="src"><code>source/blender/gpu/</code> · <a href="../catalog.html#gpu">gpu</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q172">
+        <summary><span class="qn">172</span> 视口卡顿应该先怪 Draw 还是 depsgraph？</summary>
+        <div class="ans">
+          <p>先分：几何求值贵（修改器、节点）还是 GPU 提交贵（高模批、EEVEE 材质）。前者在 depsgraph/modifiers；后者在 draw/gpu。编辑模式还可能卡在 BMesh→wrapper。</p>
+          <p>不要一律「渲染太慢」。</p>
+          <p class="src"><a href="../d/index.html">渲染入口</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>EEVEE / Workbench / 预览</h2>
+      <details class="qa" id="q173">
+        <summary><span class="qn">173</span> EEVEE 从哪取场景？</summary>
+        <div class="ans">
+          <p><code>eevee::Instance</code> 从 depsgraph 取求值 Scene / ViewLayer。物体网格仍是求值网格。它不读未求值的 BMesh。</p>
+          <p class="src"><code>draw/engines/eevee/</code> · <a href="../d/eevee.html">EEVEE</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q174">
+        <summary><span class="qn">174</span> 节点怎样变成 GPU shader？</summary>
+        <div class="ans">
+          <p><code>ShaderModule::material_shader_get</code> → <code>GPU_material_from_nodetree</code>（<code>gpu_material.cc</code>，<code>GPU_MAT_EEVEE</code>）。内部 <code>inline_shader_node_tree(SHD_OUTPUT_EEVEE)</code>，再 <code>ntreeGPUMaterialNodes</code> / <code>ntreeExecGPUNodes</code>。</p>
+          <p>这不是 SVM 字节码。</p>
+          <p class="src"><a href="../d/eevee.html">节点 → GPU</a> · <a href="../diagrams/d-shaders.svg">分叉图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q175">
+        <summary><span class="qn">175</span> Workbench 为什么不编译完整节点树？</summary>
+        <div class="ans">
+          <p>Solid/线框要快：MatCap、工作室光、cavity。<code>workbench_engine.cc</code> 不走完整 <code>GPU_material_from_nodetree</code>。建模看结构是它的产品定位。</p>
+          <p>想看 Principled，换 Material/Rendered。</p>
+          <p class="src"><a href="../catalog.html#workbench">Workbench</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q176">
+        <summary><span class="qn">176</span> EEVEE 的 F12 是路径追踪吗？</summary>
+        <div class="ans">
+          <p>不是。<code>eevee_render</code> → <code>DRW_render_to_image</code> 仍是光栅。只有引擎字符串 <code>CYCLES</code> 才进 kernel。</p>
+          <p>用户说「渲染」可能指任一引擎；源码要看 <code>scene.r.engine</code>。</p>
+          <p class="src"><a href="../d/eevee.html">实时引擎</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q177">
+        <summary><span class="qn">177</span> RE_USE_EEVEE_VIEWPORT 影响谁？</summary>
+        <div class="ans">
+          <p>Cycles 作为场景引擎时，许多视口/材质预览仍用 EEVEE 编译。Rendered 模式才走 external <code>view_draw</code>。功能上预览快，分析上不要看到 CYCLES 就以为每块像素都是 kernel。</p>
+          <p class="src"><a href="../d/draw.html">谁上、谁叠</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q178">
+        <summary><span class="qn">178</span> 探针、光照缓存本轮为什么不写？</summary>
+        <div class="ans">
+          <p>目录约定弱写 EEVEE 光照/探针。主线只要记住：它们是光栅引擎状态，不是 DNA Mesh，也不是 Cycles integrator 设置。</p>
+          <p>需要时再对 <code>draw/engines/eevee</code> 单开。</p>
+          <p class="src"><a href="../catalog.html#eevee">EEVEE</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q179">
+        <summary><span class="qn">179</span> 同一材质在 Workbench 和 EEVEE 下为何颜色不同？</summary>
+        <div class="ans">
+          <p>Workbench 用简化着色；EEVEE 用节点编译的 GPU 材质。不是存了两份 Material DNA。切换引擎等于换解释器。</p>
+          <p class="src"><a href="../d/eevee.html">Workbench</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q180">
+        <summary><span class="qn">180</span> 编辑线画在 EEVEE 场景 pass 里吗？</summary>
+        <div class="ans">
+          <p>一般在 overlay。即使 Material 预览开着，边、cage、gizmo 仍是叠层。F12 没有这套交互线。</p>
+          <p class="src"><a href="../d/draw.html">overlay</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q181">
+        <summary><span class="qn">181</span> GPU 材质缓存何时失效？</summary>
+        <div class="ans">
+          <p>节点树或相关 ID 标脏后重编译。只动物体变换通常不重编 shader。只动网格拓扑可能重抽批，不一定重编 Principled。</p>
+          <p>tag 的 recalc 类型决定贵不贵。</p>
+          <p class="src"><code>GPU_material_from_nodetree</code> · <a href="../b/rna.html">update 类型</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q182">
+        <summary><span class="qn">182</span> 为什么说 EEVEE 住在 draw 树里是合理的？</summary>
+        <div class="ans">
+          <p>它的生命周期绑在 sync/draw。抽成 intern 独立库会重复一套物体遍历。Cycles 相反：自己的场景与设备，值得独立。</p>
+          <p class="src"><a href="modules.html#q041">Q041</a> · <a href="../catalog.html#eevee">EEVEE</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q183">
+        <summary><span class="qn">183</span> 材质预览球走哪条编译？</summary>
+        <div class="ans">
+          <p>常走 EEVEE 视口标志那条，即使场景是 Cycles。球上看对不代表 F12 闭包一致。对比请看真 F12 或 Rendered+Cycles。</p>
+          <p class="src"><code>RE_USE_EEVEE_VIEWPORT</code> · <a href="../features.html">功能地图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q184">
+        <summary><span class="qn">184</span> Workbench 的 F12 有什么用？</summary>
+        <div class="ans">
+          <p>快速出结构图、线框文档帧，不追求物理。仍经 render 调度选引擎，不是「截视口」。修改器级别用 Render 模式。</p>
+          <p class="src"><a href="../d/eevee.html">Workbench</a> · <a href="../catalog.html#render">render</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>F12 / Cycles / 节点分叉</h2>
+      <details class="qa" id="q185">
+        <summary><span class="qn">185</span> 按 F12 的函数链？</summary>
+        <div class="ans">
+          <p><code>RENDER_OT_render</code>（<code>render_internal.cc</code>）→ <code>RE_RenderFrame</code> → <code>RE_engine_render</code> → <code>RE_engines_find(scene.r.engine)</code>。未知 id 回落 <code>BLENDER_EEVEE</code>。</p>
+          <p>用户手感是一个键，源码是 Operator + 调度 + 引擎回调。</p>
+          <p class="src"><a href="../d/cycles.html">F12 按引擎字符串分发</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q186">
+        <summary><span class="qn">186</span> Cycles 怎样接到 Blender 场景？</summary>
+        <div class="ans">
+          <p>Python <code>CyclesRender</code>（<code>bl_idname = 'CYCLES'</code>）→ <code>_cycles.render</code>。<code>BlenderSync::sync_data</code>（<code>sync.cpp</code>）从 depsgraph 迭代求值物体；网格 <code>object_to_mesh</code>。</p>
+          <p>同步的是求值世界，不是 <code>edit_mesh</code> 指针。</p>
+          <p class="src"><code>intern/cycles/blender/</code> · <a href="../d/cycles.html">怎样接到场景</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q187">
+        <summary><span class="qn">187</span> intern/cycles 内部怎么分层？</summary>
+        <div class="ans">
+          <p><code>session/</code> 采样分块缓冲；<code>scene/</code> 自己的 Object/Shader/Integrator；<code>integrator/</code> 的 <code>PathTrace</code>；<code>kernel/</code> SVM/闭包；<code>device/</code> CPU/CUDA 等（预编译库不拉）。</p>
+          <p>读同步先看 <code>blender/</code>，再下到 scene/kernel。</p>
+          <p class="src"><a href="../catalog.html#cycles">Cycles</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q188">
+        <summary><span class="qn">188</span> 节点到 Cycles 闭包的函数？</summary>
+        <div class="ans">
+          <p><code>intern/cycles/blender/shader.cpp</code>：<code>sync_materials</code> → <code>add_nodes</code> / <code>add_node</code>，目标 <code>SHD_OUTPUT_CYCLES</code>，再 <code>SVMCompiler</code>。运行时 <code>kernel/svm/closure.h</code>。</p>
+          <p>与 <code>GPU_material_from_nodetree</code> 分道。</p>
+          <p class="src"><a href="../d/cycles.html">节点 → 闭包</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q189">
+        <summary><span class="qn">189</span> 为什么 BMesh 不进 kernel？</summary>
+        <div class="ans">
+          <p>kernel 要的是求值后的三角/属性数组。编辑态半边先转换并按 Render 模式套修改器。改拓扑必须写回并标脏，UI–数据 + 建模已经保证这条。</p>
+          <p class="src"><a href="../d/cycles.html">和建模收束</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q190">
+        <summary><span class="qn">190</span> render 模块自己做积分器吗？</summary>
+        <div class="ans">
+          <p>不做。它管结果、图层、引擎注册与作业。选 Cycles 还是 EEVEE 是查表，不是内嵌路径追踪。</p>
+          <p class="src"><code>RE_engine_render</code> · <a href="../catalog.html#render">render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q191">
+        <summary><span class="qn">191</span> Hydra 在地图里为何只点名？</summary>
+        <div class="ans">
+          <p><code>source/blender/render/hydra</code> 存在，服务外部引擎桥。主线学习网格编辑和 Cycles/EEVEE 分道，不展开 USD 视口。</p>
+          <p class="src"><a href="../d/cycles.html">later</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q192">
+        <summary><span class="qn">192</span> 合成和 F12 的关系？</summary>
+        <div class="ans">
+          <p>F12 pipeline 里可以再走合成。本站主线在「引擎写出图层」处停。不要在 Cycles kernel 里找 Glare 节点实现。</p>
+          <p class="src"><a href="../render.html">渲染地图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q193">
+        <summary><span class="qn">193</span> 视口 Rendered+Cycles 和 F12 共享 session 吗？</summary>
+        <div class="ans">
+          <p>可以共享引擎概念，但分辨率、采样、相机、depsgraph 模式仍可不同。不要假设「视口看到第 32 样本 = F12 已算完」。</p>
+          <p>分析以 <code>DAG_EVAL_RENDER</code> 的 F12 作业为准。</p>
+          <p class="src"><code>draw::external::Engine</code> · <a href="../d/draw.html">Draw</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q194">
+        <summary><span class="qn">194</span> 采样、分块在哪一层？</summary>
+        <div class="ans">
+          <p>Cycles 的 <code>session/</code>。Blender render 作业催的是引擎回调；tile 策略不在 editors/render 里手写。UI 上的采样数是 RNA → DNA（场景/Cycles 设置）再 sync 进 session。</p>
+          <p class="src"><code>intern/cycles/session/</code> · <a href="../d/cycles.html">分层</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q195">
+        <summary><span class="qn">195</span> 为什么说「一套节点语义、两套机器码」？</summary>
+        <div class="ans">
+          <p>用户只维护一棵 <code>NodeTree</code>。EEVEE 编 GPU shader，Cycles 编 SVM/OSL/闭包。输出插座用 <code>SHD_OUTPUT_EEVEE</code> / <code>SHD_OUTPUT_CYCLES</code> 分流。语义尽量对齐，数值不必逐像素相同。</p>
+          <p class="src"><a href="../catalog.html#nodes-shader">shader nodes</a> · <a href="../diagrams/d-shaders.svg">d-shaders</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q196">
+        <summary><span class="qn">196</span> device 库为什么分析不拉？</summary>
+        <div class="ans">
+          <p>CUDA/HIP 等是预编译二进制与内核，对理解「谁同步场景」不是必需。读 <code>device/</code> 的接口即可。约束禁止为看图去 <code>make update</code>。</p>
+          <p class="src"><a href="../../constraints.md">constraints.md</a> · <a href="../catalog.html#cycles">Cycles 下游</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q197">
+        <summary><span class="qn">197</span> 渲染图层（view layer）在分道里扮演什么？</summary>
+        <div class="ans">
+          <p>视口图按当前 View Layer 建；F12 按要出的层/通道建渲染图。物体集合可见性按层不同。同步 Cycles 时也按层迭代求值物体。</p>
+          <p>不是「又一种修改器」。</p>
+          <p class="src"><code>DEG_graph_build_from_view_layer</code> · <a href="../d/depsgraph.html">建图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q198">
+        <summary><span class="qn">198</span> 主线闭环四个动词？</summary>
+        <div class="ans">
+          <p>操作（WM/Operator）→ 数据（DNA/BMesh）→ 求值（depsgraph/修改器）→ 像素（Draw 或 Cycles）。问答四组按这个顺序把同一事实问了四遍：模块边界、用户功能、UI 写入、渲染分道。</p>
+          <p class="src"><a href="../index.html">总览</a> · <a href="../d/cycles.html">主线到此</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q199">
+        <summary><span class="qn">199</span> 读渲染源码时最容易编造的 API 是什么？</summary>
+        <div class="ans">
+          <p><code>DEG_evaluate</code>。请用 <code>DEG_evaluate_on_refresh</code> / <code>on_framechange</code>。其次不要把 overlay 写成 <code>RenderEngineType</code>，不要把 Workbench 写成「没着色的 EEVEE」。</p>
+          <p class="src"><a href="../d/depsgraph.html">Depsgraph</a> · <a href="../d/draw.html">overlay</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q200">
+        <summary><span class="qn">200</span> 二百题之后还该去哪？</summary>
+        <div class="ans">
+          <p>目录仍是权威条目。要把函数读顺：数据章五页、建模四页、渲染四页。合成、雕刻、IO、GHOST 按需另开，不在这 200 题里凑数。</p>
+          <p>打开方式：<a href="index.html">问答入口</a> 或 <a href="../index.html">总览</a>。</p>
+          <p class="src"><a href="../catalog.html">catalog.html</a> · <a href="../b/index.html">数据</a> · <a href="../c/index.html">建模</a> · <a href="../d/index.html">渲染</a></p>
+        </div>
+      </details>
+    </section>
+
+    <p class="qa-pager">
+      <a href="ui-data.html">上一组：UI–数据</a>
+      <a href="index.html">回到问答入口</a>
+    </p>
+  </main>
+  <footer class="wrap">深讲：<a href="../d/index.html">渲染</a>。合成 / Hydra 点到为止。</footer>
+</body>
+</html>

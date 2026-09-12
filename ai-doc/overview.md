@@ -4,7 +4,7 @@
 
 模块地图已做成可打开的 HTML：用浏览器打开 [site/index.html](site/index.html)。权威正文是 [site/catalog.html](site/catalog.html)；五套划分页只是同一目录的投影。
 
-深讲：[数据](site/b/index.html) · [建模](site/c/index.html) · [渲染](site/d/index.html)。
+深讲：[数据](site/b/index.html) · [建模](site/c/index.html) · [渲染](site/d/index.html)。二百问答：[site/qa/index.html](site/qa/index.html)。
 
 本文仍只标明**读哪里**。不要为了“弄懂结构”去改源码或拉取 `lib/`。
 

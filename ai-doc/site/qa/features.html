@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>问答 · 功能 · Blender 学习站</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="../index.html">Blender 学习站<small>二百问答 · 非官方</small></a>
+      <nav>
+        <a href="../index.html">总览</a>
+        <a href="../catalog.html">目录</a>
+        <a href="index.html" class="is-active">问答</a>
+        <a href="../b/index.html">数据</a>
+        <a href="../c/index.html">建模</a>
+        <a href="../d/index.html">渲染</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="hero">
+      <p class="kicker">Q051–100 · 功能</p>
+      <h1>从用户动作反查</h1>
+      <p class="lede">问的是「我在软件里做什么会碰到哪些层」。橙底对照见功能地图。雕刻、UV、权重本轮不建功能条。</p>
+    </section>
+    <p class="subnav">
+      <a href="index.html">问答入口</a>
+      <a href="modules.html">模块 001–050</a>
+      <a href="features.html" class="is-active">功能 051–100</a>
+      <a href="ui-data.html">UI–数据 101–150</a>
+      <a href="render.html">渲染 151–200</a>
+    </p>
+    <figure class="figure">
+      <img src="../diagrams/features.svg" alt="功能与子系统对照">
+      <figcaption>F12 不走 Draw；纯视口预览不走 Cycles。编辑模式才进 BMesh。</figcaption>
+    </figure>
+    <p class="qa-toc">
+      <a href="#q051">051</a><a href="#q052">052</a><a href="#q053">053</a><a href="#q054">054</a><a href="#q055">055</a>
+      <a href="#q056">056</a><a href="#q057">057</a><a href="#q058">058</a><a href="#q059">059</a><a href="#q060">060</a>
+      <a href="#q061">061</a><a href="#q062">062</a><a href="#q063">063</a><a href="#q064">064</a><a href="#q065">065</a>
+      <a href="#q066">066</a><a href="#q067">067</a><a href="#q068">068</a><a href="#q069">069</a><a href="#q070">070</a>
+      <a href="#q071">071</a><a href="#q072">072</a><a href="#q073">073</a><a href="#q074">074</a><a href="#q075">075</a>
+      <a href="#q076">076</a><a href="#q077">077</a><a href="#q078">078</a><a href="#q079">079</a><a href="#q080">080</a>
+      <a href="#q081">081</a><a href="#q082">082</a><a href="#q083">083</a><a href="#q084">084</a><a href="#q085">085</a>
+      <a href="#q086">086</a><a href="#q087">087</a><a href="#q088">088</a><a href="#q089">089</a><a href="#q090">090</a>
+      <a href="#q091">091</a><a href="#q092">092</a><a href="#q093">093</a><a href="#q094">094</a><a href="#q095">095</a>
+      <a href="#q096">096</a><a href="#q097">097</a><a href="#q098">098</a><a href="#q099">099</a><a href="#q100">100</a>
+    </p>
+
+    <section class="qa-group">
+      <h2>物体模式 / 变换 / Tab</h2>
+      <details class="qa" id="q051">
+        <summary><span class="qn">051</span> 物体模式移动立方体，会进 BMesh 吗？</summary>
+        <div class="ans">
+          <p>不会。G 走 transform modal，写回 <code>Object</code> 的位置/旋转/缩放。网格数组不动。depsgraph 标 TRANSFORM，视口重画物体矩阵。</p>
+          <p>只有进入编辑模式后，同一套 G 才写 BMesh 顶点。</p>
+          <p class="src"><code>editors/transform/</code> · <a href="../catalog.html#editors-transform">transform</a> · <a href="../features.html">按功能</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q052">
+        <summary><span class="qn">052</span> Shift+A 添加网格走哪条功能链？</summary>
+        <div class="ans">
+          <p>editors/object 创建 Object + Mesh ID，链进 <code>Main</code> 和集合。新 Mesh 是数组网格，默认物体模式。不先建 BMesh。</p>
+          <p>随后若立刻 Tab，再 <code>EDBM_mesh_make</code> 转半边。</p>
+          <p class="src"><code>editors/object/</code> · <a href="../catalog.html#editors-object">editors/object</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q053">
+        <summary><span class="qn">053</span> Tab 进编辑模式用户感觉「没变」，源码做了什么？</summary>
+        <div class="ans">
+          <p><code>OBJECT_OT_editmode_toggle</code>：<code>ob->mode = OB_MODE_EDIT</code>，<code>EDBM_mesh_make</code> → <code>BM_mesh_bm_from_me</code>，挂 <code>edit_mesh</code>，重算 looptris/法线，<code>DEG_id_tag_update</code>。屏幕上仍是同一物体，存储格式已经换了。</p>
+          <p>DNA 的 <code>verts_num</code> 可以暂时落后于 BMesh，直到 flush / 退出。</p>
+          <p class="src"><code>editmode_enter_ex</code> · <a href="../c/editmode.html">进出编辑模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q054">
+        <summary><span class="qn">054</span> Tab 出去时为什么可能「卡一下」？</summary>
+        <div class="ans">
+          <p>离开要 <code>EDBM_mesh_load_ex</code> → <code>BM_mesh_bm_to_me</code> 把半边写回数组，再释放 <code>edit_mesh</code>。大网格是一次完整转换，不是只改模式标志。</p>
+          <p>求值中的 <code>BM_mesh_bm_to_me_for_eval</code> 是临时数组，不代表用户已退出。</p>
+          <p class="src"><code>editmode_exit_ex</code> · <a href="../c/editmode.html">进出编辑模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q055">
+        <summary><span class="qn">055</span> 物体模式选中和高亮是谁画的？</summary>
+        <div class="ans">
+          <p>选择状态在 View Layer / Object 标志上。轮廓和原点是 overlay，不是 Workbench 材质。换 Solid/Material 通常还在。</p>
+          <p>不要在 Cycles kernel 里找活动物体描边。</p>
+          <p class="src"><a href="../catalog.html#editors-view3d">View3D</a> · <a href="../d/draw.html">overlay</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q056">
+        <summary><span class="qn">056</span> 应用物体变换（Ctrl+A）改的是网格还是物体？</summary>
+        <div class="ans">
+          <p>「应用位置/旋转/缩放」把矩阵烤进数据（网格物体则烤进顶点或把变换归单位）。这是 editors/object，物体模式功能。编辑模式里另有「把变换应用到顶点」的语义，仍不是修改器 Apply。</p>
+          <p>和「应用修改器」名字像，路径完全不同。</p>
+          <p class="src"><code>OBJECT_OT_transform_apply</code> · <a href="../catalog.html#editors-object">editors/object</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q057">
+        <summary><span class="qn">057</span> 父子关系求值时发生什么？</summary>
+        <div class="ans">
+          <p>DNA 存 parent 指针。视口看到的世界矩阵由 depsgraph 的 TRANSFORM 组件算出。改父物体，子物体不用用户再点一次「计算」。</p>
+          <p>编辑子物体网格仍改子 Mesh/BMesh，不自动改父网格。</p>
+          <p class="src"><a href="../catalog.html#depsgraph">depsgraph</a> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q058">
+        <summary><span class="qn">058</span> 集合与「是否可见」属于建模功能吗？</summary>
+        <div class="ans">
+          <p>集合是组织与可见性（viewport / render hide）。depsgraph 建图和可见性阶段会读这些标志。它不改拓扑，但决定物体会不会进视口图或渲染图。</p>
+          <p><code>hide_viewport</code> 与 <code>hide_render</code> 可以不一致：这就是两张求值图分叉的用户开关之一。</p>
+          <p class="src"><code>DAG_EVAL_VIEWPORT</code> · <a href="../d/depsgraph.html">两种模式</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q059">
+        <summary><span class="qn">059</span> 复制物体（Shift+D）复制的是哪份数据？</summary>
+        <div class="ans">
+          <p>默认常复制 Object，Mesh 可以是共享或新拷贝（用户计数）。共享时两个物体改同一 Mesh；编辑模式进的是那份 Mesh 的 <code>edit_mesh</code>。</p>
+          <p>功能上看「两个立方体」，数据上可能仍是一块 ID。</p>
+          <p class="src"><code>ID.us</code> · <a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q060">
+        <summary><span class="qn">060</span> 为什么物体模式没有「挤出」？</summary>
+        <div class="ans">
+          <p>挤出要半边拓扑。poll <code>ED_operator_editmesh</code> 失败则快捷键无效。用户必须先 Tab。这是功能门，不是键位丢了。</p>
+          <p>物体模式对应的是「复制物体」或修改器，不是面挤出。</p>
+          <p class="src"><code>ED_operator_editmesh</code> · <a href="../c/ops.html">挤出</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q061">
+        <summary><span class="qn">061</span> 原点（origin）移动是网格功能还是物体功能？</summary>
+        <div class="ans">
+          <p>改的是物体与数据的相对原点，通常走 object 编辑器：平移数据或改物体矩阵，使视觉位置不变、原点变。不是 BMO。</p>
+          <p>编辑模式里也可以「设原点」，仍要写回 Mesh 坐标与物体位置配对。</p>
+          <p class="src"><a href="../catalog.html#editors-object">editors/object</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q062">
+        <summary><span class="qn">062</span> 多物体同时编辑时功能链有何不同？</summary>
+        <div class="ans">
+          <p>exec 用 <code>BKE_view_layer_array_from_objects_in_edit_mode_unique_data</code> 扫所有编辑态网格，对每份 unique Mesh 跑一遍。共享 data 的物体不会被算两次。</p>
+          <p>功能上「挤出两个立方体」，实现上按数据块去重。</p>
+          <p class="src"><code>BKE_editmesh_from_object</code> · <a href="../b/operator.html">Operator</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>编辑模式改网格</h2>
+      <details class="qa" id="q063">
+        <summary><span class="qn">063</span> 点选一个顶点，改的是 DNA 吗？</summary>
+        <div class="ans">
+          <p>选择标志在 BMesh 元素上。DNA 选择层要等 flush / 退出才对齐。<code>needs_flush_to_id</code> 表示磁盘布局过期。</p>
+          <p>视口编辑线来自 editmesh 的 looptris，不是读 <code>verts_num</code> 旧值。</p>
+          <p class="src"><code>BM_ELEM_SELECT</code> · <a href="../c/mesh-bmesh.html">两套网格</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q064">
+        <summary><span class="qn">064</span> 挤出（E）实际调用了什么？</summary>
+        <div class="ans">
+          <p>菜单常见 <code>MESH_OT_extrude_region_move</code>：<code>edbm_extrude_ex</code> → BMO <code>"extrude_face_region"</code> → <code>bmo_extrude_face_region_exec</code> → <code>EDBM_update</code>，再接 transform modal 让你拖。</p>
+          <p>只挤出不移动是另一条 Operator。用户手感是一次动作，源码是命令组合。</p>
+          <p class="src"><code>editmesh_extrude.cc</code> · <a href="../c/ops.html">挤出与 BMO</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q065">
+        <summary><span class="qn">065</span> 为什么挤出时文件里的顶点数可以还是旧的？</summary>
+        <div class="ans">
+          <p>留在编辑模式只改 <code>em->bm</code>。写回 DNA 发生在退出或显式 flush。这是功能承诺：连续工具不要每步序列化整网。</p>
+          <p>保存文件前会离开编辑或 flush，否则盘上仍应是一致数组网格。</p>
+          <p class="src"><code>EDBM_update</code> · <a href="../c/index.html">建模</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q066">
+        <summary><span class="qn">066</span> 溶解顶点走 BMO 还是直接删数组？</summary>
+        <div class="ans">
+          <p><code>"dissolve_verts"</code> → <code>bmo_dissolve_verts_exec</code> → <code>MESH_OT_dissolve_verts</code>。半边溶解要重连面，不能只把顶点从数组 pop 掉。</p>
+          <p>poll 同样是 <code>ED_operator_editmesh</code>。</p>
+          <p class="src"><code>bmo_dissolve.cc</code> · <a href="../c/ops.html">溶解</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q067">
+        <summary><span class="qn">067</span> 细分（W / Ctrl+1 等）为什么有的不走 BMO 表？</summary>
+        <div class="ans">
+          <p><code>MESH_OT_subdivide</code> 的 exec 直接 <code>BM_mesh_esubdivide</code>。历史与性能：这条路径更早、更专用。挤出/溶解走统一表。功能上都是「编辑态改拓扑」。</p>
+          <p>不要要求每个工具都有 BMO 名。</p>
+          <p class="src"><code>edbm_subdivide_exec</code> · <a href="../b/operator.html">MESH_OT_subdivide</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q068">
+        <summary><span class="qn">068</span> 刀切、环切功能落在哪？</summary>
+        <div class="ans">
+          <p>仍是 editors/mesh + BMesh（多为 modal）。本问答不展开每个工具，但边界相同：改 <code>bm</code>，<code>EDBM_update</code> 标几何脏，不立刻算修改器。</p>
+          <p>环切预览是 modal 期间的临时几何，确认后才进 BMesh。</p>
+          <p class="src"><a href="../catalog.html#editors-mesh">editors/mesh</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q069">
+        <summary><span class="qn">069</span> 编辑模式里的修改器笼子是什么功能？</summary>
+        <div class="ans">
+          <p>求值出 cage / final 两份：<code>BKE_object_get_editmesh_eval_cage</code> 与 <code>_final</code>。你可以在变形后的表面上选点，工具仍写回基 BMesh。</p>
+          <p>看起来「点在细分后的位置」，数据还在未 Apply 的基网格上。</p>
+          <p class="src"><code>editbmesh_calc_modifiers</code> · <a href="../c/modifiers.html">修改器</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q070">
+        <summary><span class="qn">070</span> 对称编辑（X 镜像）是修改器吗？</summary>
+        <div class="ans">
+          <p>通常是编辑工具在 BMesh 上对对称元素同步，或 Mesh 上的对称选项。和 Mirror 修改器叠加时，用户容易混：一个改基网格，一个求值时复制。</p>
+          <p>先分清「破坏性对称」还是「栈上镜像」。</p>
+          <p class="src"><a href="../c/ops.html">BMO</a> · <a href="../catalog.html#modifiers">modifiers</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q071">
+        <summary><span class="qn">071</span> 法线重算是独立功能还是更新的副作用？</summary>
+        <div class="ans">
+          <p>两者都有。工具可调专门 Operator；<code>EDBM_update</code> 也会按参数重算法线 / looptris，供编辑绘制。用户不点「重算法线」，挤出后看起来仍正确，是因为更新带了这一步。</p>
+          <p>这不是 depsgraph 修改器栈。</p>
+          <p class="src"><code>BKE_editmesh_looptris_and_normals_calc</code> · <a href="../b/update.html">更新</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q072">
+        <summary><span class="qn">072</span> 合并（M）与溶解有何功能差别？</summary>
+        <div class="ans">
+          <p>合并把多个顶点焊到一点；溶解去掉元素并尽量保持周围面。都是 BMesh 拓扑工具，不是修改器。结果立刻在编辑态可见，退出才写回数组。</p>
+          <p>功能名接近，BMO 入口不同。</p>
+          <p class="src"><a href="../catalog.html#editors-mesh">editors/mesh</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q073">
+        <summary><span class="qn">073</span> 选择模式（点/边/面）存在哪？</summary>
+        <div class="ans">
+          <p>编辑网格的 selectmode 跟着 <code>BMEditMesh</code> / 工具设置。它改的是后续 Operator 解释选择的方式，不是换数据块。transform 和 BMO 槽 <code>verts=%hv</code> 按当前选择填充。</p>
+          <p>物体模式没有这三档。</p>
+          <p class="src"><code>EDBM_op_callf</code> · <a href="../c/ops.html">BMO 槽位</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q074">
+        <summary><span class="qn">074</span> 隐藏顶点（H）影响渲染吗？</summary>
+        <div class="ans">
+          <p>编辑隐藏主要影响编辑态显示与选择。F12 用的是求值网格；未退出时会经 wrapper 转换。不要默认「H 掉的面 F12 一定没有」——要看是否写回、是否有修改器重建。</p>
+          <p>物体级 hide-render 才是渲染图的硬开关。</p>
+          <p class="src"><a href="../c/editmode.html">编辑模式</a> · <a href="../d/depsgraph.html">可见性</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q075">
+        <summary><span class="qn">075</span> 撤销挤出撤销的是 BMesh 还是修改器结果？</summary>
+        <div class="ans">
+          <p>带 <code>OPTYPE_UNDO</code> 的网格 Operator 结束时 <code>ED_undo_push_op</code>。撤销恢复的是数据块（含编辑态），不是单独把 EEVEE 帧回退。修改器预览会随基网格重求值。</p>
+          <p>Python <code>bpy.ops</code> 默认常压住 undo，除非 <code>is_undo</code>。</p>
+          <p class="src"><code>OPTYPE_UNDO</code> · <a href="../b/update.html">撤销</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q076">
+        <summary><span class="qn">076</span> 为什么「看起来光滑」有时只是着色，不是拓扑功能？</summary>
+        <div class="ans">
+          <p>Auto Smooth / 平滑着色写的是法线与标志，面数不变。细分修改器才加拓扑。功能上都叫光滑，模块不同：一个常是 Mesh 标志 + 绘制，一个是 modifiers + 求值。</p>
+          <p>看边数有没有涨，就能分开。</p>
+          <p class="src"><a href="../catalog.html#blenkernel">Mesh</a> · <a href="../catalog.html#modifiers">modifiers</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>修改器与 Apply</h2>
+      <details class="qa" id="q077">
+        <summary><span class="qn">077</span> 添加细分修改器时为什么网格没有立刻变密？</summary>
+        <div class="ans">
+          <p>点添加只往 <code>Object.modifiers</code> 塞 <code>ModifierData</code>。变形在下一轮 depsgraph：<code>BKE_object_eval_uber_data</code>。视口看到的是求值副本。</p>
+          <p>基网格顶点数可以不变。这是非破坏功能的核心。</p>
+          <p class="src"><code>Object.modifiers</code> · <a href="../c/modifiers.html">栈在物体上</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q078">
+        <summary><span class="qn">078</span> 视口细分级别和渲染级别为什么能不同？</summary>
+        <div class="ans">
+          <p>同一 <code>mesh_calc_modifiers</code>，模式是 <code>eModifierMode_Realtime</code> 还是 <code>Render</code>，再读修改器上的视口/渲染级别。视口图与 F12 图因此分叉。</p>
+          <p>功能上为了交互帧率；不要以为 F12「少算了一级」是 bug。</p>
+          <p class="src"><code>eModifierMode_Realtime</code> · <a href="../diagrams/c-modifier-eval.svg">modifier-eval</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q079">
+        <summary><span class="qn">079</span> Apply 修改器是什么功能，编辑模式为何不能 Apply？</summary>
+        <div class="ans">
+          <p><code>OBJECT_OT_modifier_apply</code> 把当前求值结果烤进<strong>原始</strong> Mesh（<code>BKE_mesh_nomain_to_mesh</code>）并删除该修改器。编辑模式真相在 BMesh，不允许这条破坏路径。</p>
+          <p>Apply 之后文件里的基网格变了；未 Apply 的求值结果不进文件。</p>
+          <p class="src"><code>object_modifier.cc</code> · <a href="../c/modifiers.html">Apply 不是求值</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q080">
+        <summary><span class="qn">080</span> 禁用修改口视口显示，F12 还会算它吗？</summary>
+        <div class="ans">
+          <p>可以。Realtime 与 Render 开关独立。视口关掉、渲染打开是常见档。两张 depsgraph 分别尊重 hide 与模式标志。</p>
+          <p>功能测试：只看视口不能断定 F12 网格。</p>
+          <p class="src"><a href="../d/depsgraph.html">DAG_EVAL_RENDER</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q081">
+        <summary><span class="qn">081</span> 修改器顺序是功能还是实现细节？</summary>
+        <div class="ans">
+          <p>是功能。链表顺序就是栈顺序，<code>mesh_calc_modifiers</code> 按序 <code>BKE_modifier_modify_mesh</code>。先镜像后细分与相反，结果不同。</p>
+          <p>面板上的上下箭头改的是 DNA 链表，不是「显示排序」。</p>
+          <p class="src"><code>BKE_modifier_modify_mesh</code> · <a href="../catalog.html#modifiers">modifiers</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q082">
+        <summary><span class="qn">082</span> 几何节点修改器能代替编辑模式吗？</summary>
+        <div class="ans">
+          <p>不能代替。节点在求值时把网格当数据处理；挤出、点选、溶解仍是 BMesh 工具。节点可以生成新几何，但那是修改器输出，不是 <code>edit_mesh</code>。</p>
+          <p>想对节点结果用编辑工具，通常要 Apply 或用其它工作流把几何变成可编辑 Mesh。</p>
+          <p class="src"><code>modify_geometry_set</code> · <a href="../c/modifiers.html">geometry / 节点</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q083">
+        <summary><span class="qn">083</span> 约束（constraint）和修改器是同一功能吗？</summary>
+        <div class="ans">
+          <p>都在求值时作用，但约束主要改变换，修改器主要改几何。用户都觉得「叠效果」。本站深讲修改器；约束点到 depsgraph TRANSFORM 即可。</p>
+          <p>不要在 <code>modifiers/</code> 里找 Copy Rotation。</p>
+          <p class="src"><a href="../catalog.html#depsgraph">depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q084">
+        <summary><span class="qn">084</span> 形态键是修改器功能吗？</summary>
+        <div class="ans">
+          <p>形态键存在 Mesh 上，求值时混进几何，常和修改器栈协同。它不是 <code>ModifierTypeInfo</code> 表里的一种类型（有独立数据）。功能上像非破坏变形。</p>
+          <p>编辑形态键仍可能进编辑模式改对应坐标。</p>
+          <p class="src"><a href="../catalog.html#blenkernel">blenkernel</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q085">
+        <summary><span class="qn">085</span> 为什么移动修改器参数视口会刷新，却没有「运行修改器 Operator」？</summary>
+        <div class="ans">
+          <p>拖参数是 RNA 属性链：写 DNA → <code>prop->update</code> → <code>DEG_id_tag_update</code>。下一圈 depsgraph 重跑 <code>modify_mesh</code>。没有单独的「执行修改器」命令。</p>
+          <p>这和挤出必须跑 Operator 正好相反。</p>
+          <p class="src"><code>RNA_property_update</code> · <a href="ui-data.html">UI–数据问答</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q086">
+        <summary><span class="qn">086</span> 实例化（collection instance）算修改器吗？</summary>
+        <div class="ans">
+          <p>不算。实例在 depsgraph 展开，Draw/Cycles 看到多个物体。源网格仍一份。功能上「场景里很多」，数据上可能只有一块 Mesh。</p>
+          <p>和 Array 修改器结果相似、机制不同：Array 常真正生成几何。</p>
+          <p class="src"><a href="../catalog.html#depsgraph">depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q087">
+        <summary><span class="qn">087</span> 编辑模式启用修改器（On Cage / Edit Mode）是什么功能开关？</summary>
+        <div class="ans">
+          <p>部分修改器声明可在编辑模式运行。求值走 <code>editbmesh_calc_modifiers</code>。关掉则编辑态只看基 BMesh，物体模式/渲染仍可套栈。</p>
+          <p>不是所有修改器都支持编辑态。</p>
+          <p class="src"><code>modifierType_Subsurf</code> · <a href="../c/modifiers.html">注册</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q088">
+        <summary><span class="qn">088</span> 「把修改器应用到形态 / 作为形态键」为何另有 Operator？</summary>
+        <div class="ans">
+          <p>普通 Apply 替换基网格。应用到形态键要写 shape 数据，仍是 object 编辑器命令，不是修改器 <code>modify_mesh</code> 自己决定「写回哪里」。</p>
+          <p>功能入口在面板按钮，计算仍先求值再烤。</p>
+          <p class="src"><code>OBJECT_OT_modifier_apply</code> · <a href="../catalog.html#editors-object">editors/object</a></p>
+        </div>
+      </details>
+    </section>
+
+    <section class="qa-group">
+      <h2>材质、视口、F12</h2>
+      <details class="qa" id="q089">
+        <summary><span class="qn">089</span> 给物体换材质，改的是网格还是物体？</summary>
+        <div class="ans">
+          <p>槽位在 Object 或 Mesh 的 <code>Material **mat</code>（DNA）。节点树是独立 ID。换材质不改拓扑，标 SHADING / 相关 recalc，Draw 或 Cycles 重编着色。</p>
+          <p>功能上「看起来换了皮」，模块上是 ID 引用。</p>
+          <p class="src"><code>Material</code> · <a href="../catalog.html#nodes-shader">shader nodes</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q090">
+        <summary><span class="qn">090</span> 节点里加 Principled，视口为何有时没变？</summary>
+        <div class="ans">
+          <p>Solid/Workbench 不走完整节点 GPU 材质。要 Material 或 Rendered 且引擎吃 EEVEE 编译。功能上用户已「做了材质」，显示模式过滤了结果。</p>
+          <p>F12 用 Cycles 时走另一套 <code>add_nodes</code>，和当前着色模式无关。</p>
+          <p class="src"><a href="../catalog.html#workbench">Workbench</a> · <a href="../d/eevee.html">GPU 材质</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q091">
+        <summary><span class="qn">091</span> 视口着色切换（Z）会重算修改器吗？</summary>
+        <div class="ans">
+          <p>通常不。它改 View3D <code>shading.type</code>，Draw 换引擎组合。几何求值已经在 WM 刷新里做过。换 Solid ↔ Material 不应重建 BMesh。</p>
+          <p>若场景被标脏，刷新是另一回事，不是 Z 本身的功能。</p>
+          <p class="src"><code>ED_view3d_engine_type</code> · <a href="../d/draw.html">一帧</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q092">
+        <summary><span class="qn">092</span> 线框模式是引擎还是叠加？</summary>
+        <div class="ans">
+          <p>着色模式线框走 Workbench；编辑边、线框叠加还可能是 overlay。功能上都叫线框。看是「整个场景用线框引擎」还是「实体上再描边」。</p>
+          <p class="src"><a href="../d/draw.html">谁上、谁叠</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q093">
+        <summary><span class="qn">093</span> 按 F12 会不会走当前视口那条像素管线？</summary>
+        <div class="ans">
+          <p>不会共享像素后端。F12：<code>RENDER_OT_render</code> → 渲染 depsgraph（<code>DAG_EVAL_RENDER</code>）→ <code>RE_engine_render</code>。视口继续 Draw。共享的是求值语义，不是 framebuffer。</p>
+          <p>引擎字符串决定 Cycles 还是 EEVEE 出图。</p>
+          <p class="src"><code>scene.r.engine</code> · <a href="../d/cycles.html">F12</a> · <a href="../render.html">渲染地图</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q094">
+        <summary><span class="qn">094</span> 视口渲染（Viewport Render）和 F12 有何功能差别？</summary>
+        <div class="ans">
+          <p>视口渲染常按当前 View3D 引擎/相机抓一帧，更接近「把视口变成图」。F12 走 render 作业、图层、分辨率、Render 修改器级别。都可能叫 EEVEE，图不同。</p>
+          <p>按钮在 editors/render，不要当成第二次 <code>DRW_draw_view</code> 那么简单，但也不要当成 Cycles kernel。</p>
+          <p class="src"><a href="../catalog.html#editors-render">editors/render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q095">
+        <summary><span class="qn">095</span> 场景引擎设为 Cycles 时，材质球为何仍像 EEVEE？</summary>
+        <div class="ans">
+          <p>许多预览走 <code>RE_USE_EEVEE_VIEWPORT</code>：用 EEVEE 编译节点做球预览。功能上预览「够快」，不是 bug。真正 F12 才 <code>BlenderSync</code> + kernel。</p>
+          <p>对照节点在 Cycles 独有闭包上的差异，不要只看材质球。</p>
+          <p class="src"><code>RE_USE_EEVEE_VIEWPORT</code> · <a href="../d/draw.html">Draw</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q096">
+        <summary><span class="qn">096</span> 动画播放时修改器每帧都算吗？</summary>
+        <div class="ans">
+          <p>换帧走 <code>DEG_evaluate_on_framechange</code>。依赖时间的修改器/节点会重算；没标脏且无时间依赖的可以复用缓存。功能上「播起来网格在动」，实现上是求值图按关系更新。</p>
+          <p>不是每一帧都从 BMesh 重建。</p>
+          <p class="src"><code>DEG_evaluate_on_framechange</code> · <a href="../d/depsgraph.html">Depsgraph</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q097">
+        <summary><span class="qn">097</span> 保存文件会保存修改器预览网格吗？</summary>
+        <div class="ans">
+          <p>默认保存 DNA：基 Mesh + 修改器参数。求值副本、GPU 网格批、Cycles BVH 不进 <code>.blend</code>。下次打开再求值。</p>
+          <p>Apply 过的才变成基网格的一部分。</p>
+          <p class="src"><a href="../catalog.html#blenloader">blenloader</a> · <a href="../catalog.html#makesdna">makesdna</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q098">
+        <summary><span class="qn">098</span> 用户按 Ctrl+Z 和按 F12 在功能上如何衔接？</summary>
+        <div class="ans">
+          <p>撤销恢复 Main 里的 ID。下一次刷新 depsgraph 用新数据求值；若正在渲染，作业看到的是渲染图上的求值世界。两条功能不要合成一个「系统撤销渲染器」。 </p>
+          <p>渲染中途撤销是产品行为，分析时记住数据源是 ID，不是 tile 缓冲。</p>
+          <p class="src"><a href="../b/update.html">撤销</a> · <a href="../catalog.html#render">render</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q099">
+        <summary><span class="qn">099</span> 「同一套节点、两套样子」是功能缺陷吗？</summary>
+        <div class="ans">
+          <p>是设计。节点语义共享，编译器分叉：光栅近似 vs 路径追踪闭包。功能上允许视口快、F12 准。差异大时查的是两套编译，不是 DNA 存了两份树。</p>
+          <p class="src"><a href="../diagrams/d-shaders.svg">d-shaders.svg</a> · <a href="../d/cycles.html">节点 → 闭包</a></p>
+        </div>
+      </details>
+      <details class="qa" id="q100">
+        <summary><span class="qn">100</span> 这 50 个功能题故意不写什么？</summary>
+        <div class="ans">
+          <p>雕刻笔刷、UV 岛、权重绘制、合成节点、序列、导入导出格式。它们会穿过别的 editors。网格编辑 + 修改器 + 视口/F12 已经够把主线走完。</p>
+          <p>下一组把这些动作拆回「按钮怎么写到同一份数据」。</p>
+          <p class="src"><a href="../features.html">按功能</a> · <a href="ui-data.html">UI–数据问答</a></p>
+        </div>
+      </details>
+    </section>
+
+    <p class="qa-pager">
+      <a href="modules.html">上一组：模块</a>
+      <a href="ui-data.html">下一组：UI–数据 Q101–150</a>
+    </p>
+  </main>
+  <footer class="wrap">对照功能地图 <a href="../features.html">features.html</a>。</footer>
+</body>
+</html>
