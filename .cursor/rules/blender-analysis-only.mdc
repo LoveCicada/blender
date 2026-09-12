@@ -1,0 +1,16 @@
+---
+description: 本 fork 只做代码分析；禁止修改 Blender 源码，笔记只写在 ai-doc/
+alwaysApply: true
+---
+
+# 只分析，不改官方源码
+
+本仓库是 Blender 学习用 fork。默认任务是代码/功能分析，不是修代码或构建。
+
+权威说明：`ai-doc/constraints.md`。动手前先读它。
+
+- 只允许修改 `ai-doc/**`。其它路径全部只读。
+- 禁止改根目录 `README.md`、CMake、`.gitignore`、`.gitmodules`、`source/`、`intern/`、`scripts/`、`lib/`、`assets/`。
+- 不要运行 `make update`、`git submodule update`、`git lfs pull`，除非用户明确要求编译。
+- 提交时只 `git add ai-doc/`，禁止 `git add .`。
+- 仓库未下全（缺预编译库、缺 LFS）不影响提交 `ai-doc/`。
