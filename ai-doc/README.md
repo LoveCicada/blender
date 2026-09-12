@@ -19,6 +19,7 @@
 |------|------|
 | [constraints.md](constraints.md) | 任务边界、禁止项、提交纪律（本任务的权威说明） |
 | [overview.md](overview.md) | 源码阅读范围与模块地图（后续补充，当前只列范围） |
+| [checkout-status.md](checkout-status.md) | 源码拉取检查：分析用文本已齐，lib / 资产 / LFS 不必补 |
 
 ## 本 fork 的用途
 
